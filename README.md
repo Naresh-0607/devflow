@@ -49,11 +49,18 @@ App: http://localhost:5173
 cd agent
 pip install -e .
 devflow login --key dvf_live_xxx --endpoint http://localhost:8000
+
+# optional: track every new repo created with `git init`
+devflow auto-track                 # hooks template for all future repos
+devflow shell-integration --install  # PowerShell: record `git init` instantly
+
 cd path/to/your/repo
-devflow install-hooks
+devflow install-hooks              # or: devflow record-init
 ```
 
 From then on every commit, checkout/switch and push is captured automatically.
+Repositories created after `devflow auto-track` are linked on their first Git
+event, and `git init` is recorded immediately when shell integration is enabled.
 Use `devflow status` to check the connection.
 
 ## Core flow

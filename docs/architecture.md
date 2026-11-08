@@ -62,6 +62,23 @@ The backend resolves the repository by `(user, local_identifier)`, creates the
 project/repository on first contact, stores the event and updates project
 activity. `repository_created` also sets the project start date.
 
+## Catching `git init`
+
+Git fires no hook when a repository is created, so the agent uses three layers:
+
+1. **Global template hooks** — `devflow auto-track` writes the
+   `post-commit`/`post-checkout`/`pre-push` hooks into `~/.devflow/git-template`
+   and sets `init.templateDir`. Every `git init`/`git clone` inherits them.
+2. **PowerShell integration** — `devflow shell-integration --install` adds a
+   small `git` wrapper to `$PROFILE` that calls `devflow record-init` right after
+   a successful `git init`, so the project is recorded immediately (the wrapper
+   uses an absolute Python path and works without the venv active).
+3. **Auto-link** — the first captured event from any unregistered repository
+   sends `repository_created` followed by the event, so `install-hooks` is
+   optional.
+
+Hooks and the wrapper always exit `0`; DevFlow can never break a Git command.
+
 ## Authentication
 
 - **Users:** email + password. Passwords hashed with Argon2id. Access JWT (30 min)
@@ -84,5 +101,6 @@ product still works offline.
 - Deploy the frontend with `@sveltejs/adapter-cloudflare` and set `VITE_API_URL`.
 - Run the backend on Render with the Neon `DATABASE_URL` (auto-normalised to
   `postgresql+asyncpg://`).
-- Agent hook installation is per-repository. A future version can add a global
-  hooks path and auto-detection of new repositories.
+- New repositories are tracked automatically via the global `init.templateDir`
+  template (`devflow auto-track`); existing repositories need a one-time
+  `devflow install-hooks` or `devflow record-init`.
