@@ -1,0 +1,18 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "devflow-agent"
+version = "0.1.0"
+description = "Event-driven local agent that sends Git activity to DevFlow."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+dependencies = []
+
+[project.scripts]
+devflow = "devflow_agent.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["devflow_agent"]
