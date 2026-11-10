@@ -2,6 +2,9 @@ services:
   - type: web
     name: devflow-api
     runtime: python
+    # Keep this in the same region as the Neon project (Singapore is closest
+    # to Chennai). Recreate the service if it already exists in another region.
+    region: singapore
     rootDir: backend
     buildCommand: pip install -r requirements.txt
     startCommand: alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT

@@ -5,16 +5,22 @@
 		deleteProject,
 		fetchProject,
 		generateSummary,
-		updateProject
+		updateProject,
+		writeCache
 	} from '#lib/api';
-	import EventRow from '#lib/components/EventRow.svelte';
 	import Icon from '#lib/components/Icon.svelte';
 	import StatusBadge from '#lib/components/StatusBadge.svelte';
+	import Timeline from '#lib/components/Timeline.svelte';
 	import { daysSince, formatDate, relativeTime } from '#lib/format';
+	import type { SwrResult } from '#lib/load';
 	import type { ProjectDetail, ProjectStatus } from '#lib/types';
 
-	let project = $state<ProjectDetail | null>(null);
-	let loading = $state(true);
+	let { data }: { data: SwrResult<ProjectDetail> } = $props();
+
+	// svelte-ignore state_referenced_locally
+	let project = $state<ProjectDetail | null>(data.cached);
+	// svelte-ignore state_referenced_locally
+	let loading = $state(!data.cached);
 	let error = $state('');
 	let notFound = $state(false);
 	let updatingStatus = $state(false);
@@ -24,12 +30,39 @@
 	const projectId = $derived(page.params.id ?? '');
 	const statuses: ProjectStatus[] = ['ACTIVE', 'PAUSED', 'COMPLETED', 'ARCHIVED'];
 
+	$effect(() => {
+		const source = data;
+		let active = true;
+		project = source.cached;
+		loading = !source.cached;
+		error = '';
+		notFound = false;
+
+		source.fresh.then((result) => {
+			if (!active) return;
+			if (result.data) {
+				project = result.data;
+				error = '';
+			} else {
+				const message = result.error ?? 'Could not load project';
+				if (message.toLowerCase().includes('not found')) notFound = true;
+				else error = message;
+			}
+			loading = false;
+		});
+		return () => {
+			active = false;
+		};
+	});
+
 	async function load(id: string) {
-		loading = true;
+		loading = !project;
 		error = '';
 		notFound = false;
 		try {
-			project = await fetchProject(id);
+			const fresh = await fetchProject(id);
+			project = fresh;
+			writeCache(`/projects/${id}`, fresh);
 		} catch (err) {
 			if (err instanceof Error && err.message.toLowerCase().includes('not found')) {
 				notFound = true;
@@ -41,10 +74,6 @@
 		}
 	}
 
-	$effect(() => {
-		if (projectId) load(projectId);
-	});
-
 	async function changeStatus(next: ProjectStatus) {
 		if (!project || next === project.status) return;
 		updatingStatus = true;
@@ -52,6 +81,7 @@
 		try {
 			const updated = await updateProject(project.id, { status: next });
 			project = { ...project, ...updated };
+			writeCache(`/projects/${project.id}`, project);
 		} catch (err) {
 			actionError = err instanceof Error ? err.message : 'Could not update status';
 		} finally {
@@ -65,7 +95,12 @@
 		actionError = '';
 		try {
 			const summary = await generateSummary(project.id, 'PROJECT');
-			project = { ...project, latest_summary: summary };
+			project = {
+				...project,
+				latest_summary: summary,
+				summary_count: project.summary_count + 1
+			};
+			writeCache(`/projects/${project.id}`, project);
 		} catch (err) {
 			actionError = err instanceof Error ? err.message : 'Could not generate a summary';
 		} finally {
@@ -189,12 +224,8 @@
 					<p class="section-title">Timeline</p>
 					<span class="text-[11px] text-zinc-600">{project.recent_events.length} recent events</span>
 				</div>
-				<div class="mt-2 divide-y divide-white/5">
-					{#each project.recent_events as event (event.id)}
-						<EventRow {event} />
-					{:else}
-						<p class="py-8 text-center text-sm text-zinc-600">No events yet. Install the agent to start the timeline.</p>
-					{/each}
+				<div class="mt-4">
+					<Timeline events={project.recent_events} />
 				</div>
 			</section>
 

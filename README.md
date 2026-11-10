@@ -11,7 +11,7 @@ cloud, and turns that timeline into human-readable summaries.
 | Path        | Description                                              |
 | ----------- | -------------------------------------------------------- |
 | `backend/`  | FastAPI API, auth, event ingestion, AI summary layer     |
-| `frontend/` | SvelteKit PWA (dashboard, projects, insights, settings)  |
+| `frontend/` | SvelteKit PWA (dashboard, projects, chat, settings)      |
 | `agent/`    | Local event-driven agent + Git hook installer            |
 | `docs/`     | Architecture and API notes                               |
 
@@ -74,7 +74,7 @@ Git hook → devflow agent → POST /api/v1/events (API key auth)
         ↓
 FastAPI → Neon/SQLite → project + repository timeline
         ↓
-LiteLLM (Groq) → AI summaries
+LiteLLM (Groq) → AI summaries + database-backed chat
         ↓
 SvelteKit PWA (phone) → "Here's what you were building."
 ```
@@ -85,14 +85,16 @@ SvelteKit PWA (phone) → "Here's what you were building."
 - [x] Device API keys (`dvf_live_…`), one-time reveal and revocation
 - [x] Event ingestion for `repository_created`, `branch_change`, `commit`, `push`
 - [x] Automatic project/repository creation and project start dates
-- [x] Dashboard, projects, project timeline, AI insights and settings pages
-- [x] Mobile-first responsive PWA with offline shell and install manifest
-- [x] LiteLLM/Groq summaries with a deterministic offline fallback
+- [x] Dashboard with a "Continue where you left off" hero, projects, vertical timeline and settings pages
+- [x] "Ask DevFlow" chat backed by fixed, user-scoped read-only tools (no SQL from the model)
+- [x] Mobile-first responsive PWA with offline shell, install manifest and light/dark themes
+- [x] LiteLLM/Groq summaries and chat with a deterministic offline fallback
 - [x] Local agent with non-blocking `post-commit`, `post-checkout`, `pre-push` hooks
 - [x] Global Git hooks template + auto-tracking of newly initialised repositories (`git init`)
 - [x] Alembic migrations for production schema changes
-- [x] Per-API-key rate limiting on event ingestion
-- [x] Backend test suite (`9 passed`) and verified end-to-end Git hook flow
+- [x] Per-API-key event rate limiting and per-user chat rate limiting
+- [x] Frontend caching/preloading, gzip, health ping and measured performance (see [docs/performance.md](docs/performance.md))
+- [x] Backend test suite (`15 passed`) and verified end-to-end Git hook flow
 
 ## Next steps
 

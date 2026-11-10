@@ -98,6 +98,7 @@ class RefreshToken(Base):
 
 class Project(TimestampMixin, Base):
     __tablename__ = "projects"
+    __table_args__ = (Index("ix_projects_user_status", "user_id", "status"),)
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     user_id: Mapped[uuid.UUID] = mapped_column(
@@ -162,6 +163,9 @@ class GitEvent(Base):
 
 class AISummary(Base):
     __tablename__ = "ai_summaries"
+    __table_args__ = (
+        Index("ix_ai_summaries_project_created", "project_id", "created_at"),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     project_id: Mapped[uuid.UUID] = mapped_column(

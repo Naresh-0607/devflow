@@ -114,6 +114,47 @@ async def project_stats(db: AsyncSession, project_id) -> tuple[datetime | None, 
     return last_activity, event_count, repo_count
 
 
+async def project_metrics_bulk(
+    db: AsyncSession, project_ids: list
+) -> dict:
+    """Return ``{project_id: (last_activity, event_count, repository_count)}``.
+
+    Two grouped queries instead of three per project, so listing N projects is
+    O(1) round-trips rather than O(N).
+    """
+    if not project_ids:
+        return {}
+
+    activity_rows = (
+        await db.execute(
+            select(
+                Repository.project_id,
+                func.max(GitEvent.created_at),
+                func.count(GitEvent.id),
+            )
+            .join(Repository, GitEvent.repository_id == Repository.id)
+            .where(Repository.project_id.in_(project_ids))
+            .group_by(Repository.project_id)
+        )
+    ).all()
+    repo_rows = (
+        await db.execute(
+            select(Repository.project_id, func.count(Repository.id))
+            .where(Repository.project_id.in_(project_ids))
+            .group_by(Repository.project_id)
+        )
+    ).all()
+
+    metrics = {
+        project_id: (last_activity, event_count, 0)
+        for project_id, last_activity, event_count in activity_rows
+    }
+    for project_id, repo_count in repo_rows:
+        last_activity, event_count, _ = metrics.get(project_id, (None, 0, 0))
+        metrics[project_id] = (last_activity, event_count, repo_count)
+    return metrics
+
+
 async def list_events_for_project(
     db: AsyncSession, project_id, limit: int = 50, offset: int = 0
 ) -> list[GitEvent]:

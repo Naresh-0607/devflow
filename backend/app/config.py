@@ -70,6 +70,9 @@ class Settings(BaseSettings):
 
     # Per-API-key ingestion limit. Set to 0 to disable.
     event_rate_limit_per_minute: int = 120
+    # Per-user chat limit. Set to 0 to disable.
+    chat_rate_limit_per_minute: int = 20
+    chat_max_tool_iterations: int = 4
 
     @property
     def database_url_async(self) -> str:

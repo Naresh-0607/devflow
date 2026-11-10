@@ -1,51 +1,74 @@
 <script lang="ts">
-	import { fetchDashboard } from '#lib/api';
+	import { fetchDashboard, writeCache } from '#lib/api';
 	import EventRow from '#lib/components/EventRow.svelte';
 	import Icon from '#lib/components/Icon.svelte';
-	import ProjectCard from '#lib/components/ProjectCard.svelte';
 	import StatCard from '#lib/components/StatCard.svelte';
+	import StatusBadge from '#lib/components/StatusBadge.svelte';
 	import { daysSince, eventBranch, relativeTime } from '#lib/format';
+	import type { SwrResult } from '#lib/load';
 	import type { Dashboard } from '#lib/types';
-	import { onMount } from 'svelte';
 
-	let data = $state<Dashboard | null>(null);
+	let { data }: { data: SwrResult<Dashboard> } = $props();
+
+	// Seed from the cache once; the effect below swaps in fresh data.
+	// svelte-ignore state_referenced_locally
+	let dashboard = $state<Dashboard | null>(data.cached);
 	let error = $state('');
-	let loading = $state(true);
+	// svelte-ignore state_referenced_locally
+	let loading = $state(!data.cached);
+	// svelte-ignore state_referenced_locally
+	let refreshing = $state(Boolean(data.cached));
 
-	async function load() {
-		loading = true;
+	$effect(() => {
+		let active = true;
+		data.fresh.then((result) => {
+			if (!active) return;
+			if (result.data) {
+				dashboard = result.data;
+				error = '';
+			} else {
+				error = result.error ?? 'Could not load your dashboard';
+			}
+			loading = false;
+			refreshing = false;
+		});
+		return () => {
+			active = false;
+		};
+	});
+
+	async function reload() {
+		loading = !dashboard;
 		error = '';
 		try {
-			data = await fetchDashboard();
+			const fresh = await fetchDashboard();
+			dashboard = fresh;
+			writeCache('/dashboard', fresh);
 		} catch (err) {
 			error = err instanceof Error ? err.message : 'Could not load your dashboard';
 		} finally {
 			loading = false;
+			refreshing = false;
 		}
 	}
 
-	onMount(load);
-
 	const hour = new Date().getHours();
-	const greeting = hour < 5 ? 'Still up?' : hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+	const greeting =
+		hour < 5 ? 'Still up?' : hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
 
 	const focusBranch = $derived.by(() => {
-		if (!data?.last_active_project) return null;
-		const event = data.recent_activity.find(
-			(item) => item.project_id === data?.last_active_project?.id && eventBranch(item.payload)
+		if (!dashboard?.last_active_project) return null;
+		const event = dashboard.recent_activity.find(
+			(item) =>
+				item.project_id === dashboard?.last_active_project?.id && eventBranch(item.payload)
 		);
 		return event ? eventBranch(event.payload) : null;
-	});
-
-	const summaryProject = $derived.by(() => {
-		if (!data?.latest_summary || !data.last_active_project) return data?.last_active_project?.name;
-		return data.last_active_project.name;
 	});
 </script>
 
 <svelte:head><title>Dashboard — DevFlow</title></svelte:head>
 
-<div class="flex flex-col gap-6">
+<div class="flex flex-col gap-5 sm:gap-6">
 	<div class="flex flex-wrap items-end justify-between gap-3">
 		<div>
 			<p class="text-xs font-medium uppercase tracking-[0.2em] text-mint-400/80">{greeting}</p>
@@ -59,26 +82,32 @@
 	</div>
 
 	{#if loading}
+		<div class="panel h-56 p-6 sm:h-52">
+			<div class="skeleton h-3 w-40"></div>
+			<div class="skeleton mt-5 h-8 w-2/3"></div>
+			<div class="skeleton mt-3 h-4 w-1/2"></div>
+			<div class="mt-6 flex gap-3"><div class="skeleton h-10 w-32"></div><div class="skeleton h-10 w-32"></div></div>
+		</div>
 		<div class="grid gap-4 sm:grid-cols-3">
 			{#each Array(3) as _}
 				<div class="panel h-28 p-5"><div class="skeleton h-3 w-20"></div><div class="skeleton mt-4 h-8 w-14"></div></div>
 			{/each}
 		</div>
 		<div class="grid gap-4 lg:grid-cols-5">
-			<div class="panel h-72 lg:col-span-3"></div>
-			<div class="panel h-72 lg:col-span-2"></div>
+			<div class="panel h-72 lg:col-span-3"><div class="skeleton m-5 h-4 w-28"></div></div>
+			<div class="panel h-72 lg:col-span-2"><div class="skeleton m-5 h-4 w-28"></div></div>
 		</div>
-	{:else if error}
+	{:else if error && !dashboard}
 		<div class="panel flex flex-col items-center gap-4 p-10 text-center">
 			<Icon name="alert" size={28} class="text-amber-300" />
 			<div>
 				<p class="font-medium text-zinc-200">Could not reach your memory</p>
 				<p class="mt-1 text-sm text-zinc-500">{error}</p>
 			</div>
-			<button class="btn-secondary" onclick={load}><Icon name="refresh" size={15} /> Retry</button>
+			<button class="btn-secondary" onclick={reload}><Icon name="refresh" size={15} /> Retry</button>
 		</div>
-	{:else if data}
-		{#if data.total_projects === 0}
+	{:else if dashboard}
+		{#if dashboard.total_projects === 0}
 			<div class="panel relative overflow-hidden p-6 sm:p-10">
 				<div class="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-mint-400/10 blur-3xl"></div>
 				<div class="relative max-w-xl">
@@ -97,64 +126,83 @@
 				</div>
 			</div>
 		{:else}
+			<!-- Hero: the first thing visible on a phone. -->
+			{#if dashboard.last_active_project}
+				{@const project = dashboard.last_active_project}
+				<section
+					class="panel relative overflow-hidden p-5 sm:p-6"
+					aria-labelledby="continue-heading"
+				>
+					<div class="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-iris-500/12 blur-3xl"></div>
+					<div class="pointer-events-none absolute -bottom-24 -left-16 h-56 w-56 rounded-full bg-mint-400/8 blur-3xl"></div>
+					<div class="relative">
+						<div class="flex items-center justify-between gap-3">
+							<p class="section-title">Continue where you left off</p>
+							<StatusBadge status={project.status} />
+						</div>
+
+						<h2 id="continue-heading" class="mt-3 text-2xl font-semibold tracking-tight text-zinc-50 sm:text-3xl">
+							{project.name}
+						</h2>
+						<p class="mt-1.5 text-sm text-zinc-500">
+							Started {daysSince(project.started_at)} days ago · Last activity {relativeTime(project.last_activity_at)}
+						</p>
+
+						<div class="mt-4 flex flex-wrap gap-2">
+							<span class="chip bg-iris-500/10 font-mono text-iris-200 ring-iris-400/25">
+								<Icon name="branch" size={11} /> {focusBranch ?? 'main'}
+							</span>
+							<span class="chip bg-white/5 text-zinc-400 ring-white/10">
+								<Icon name="commit" size={11} /> {project.event_count} events
+							</span>
+							<span class="chip bg-white/5 text-zinc-400 ring-white/10">
+								<Icon name="folder" size={11} /> {project.repository_count} repos
+							</span>
+						</div>
+
+						{#if dashboard.latest_summary}
+							<div class="mt-5 rounded-xl border border-white/6 bg-ink-900/60 p-4">
+								<p class="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest text-zinc-600">
+									<Icon name="sparkles" size={12} class="text-iris-300" /> Latest memory
+								</p>
+								<p class="mt-2 line-clamp-3 text-[13px] leading-relaxed text-zinc-300">
+									{dashboard.latest_summary.summary}
+								</p>
+							</div>
+						{/if}
+
+						<div class="mt-5 flex flex-wrap gap-2.5">
+							<a href="/projects/{project.id}" class="btn-primary">
+								Open project <Icon name="chevron-right" size={15} />
+							</a>
+							<a href="/chat" class="btn-secondary">
+								<Icon name="message" size={15} /> Ask DevFlow
+							</a>
+						</div>
+					</div>
+				</section>
+			{/if}
+
 			<!-- Stats -->
 			<div class="grid gap-4 sm:grid-cols-3">
-				<StatCard label="Active projects" value={data.active_projects} icon="zap" hint="Currently in motion" />
-				<StatCard label="Captured events" value={data.total_events} icon="commit" hint="Commits, branches & pushes" tone="text-iris-300" />
-				<StatCard label="Projects in memory" value={data.total_projects} icon="folder" hint="Across all repositories" tone="text-sky-300" />
+				<StatCard label="Active projects" value={dashboard.active_projects} icon="zap" hint="Currently in motion" />
+				<StatCard label="Captured events" value={dashboard.total_events} icon="commit" hint="Commits, branches & pushes" tone="text-iris-300" />
+				<StatCard label="Projects in memory" value={dashboard.total_projects} icon="folder" hint="Across all repositories" tone="text-sky-300" />
 			</div>
 
 			<div class="grid gap-4 lg:grid-cols-5">
-				<!-- Current focus -->
-				<section class="panel relative overflow-hidden p-5 sm:p-6 lg:col-span-3">
-					<div class="pointer-events-none absolute -right-24 -top-24 h-56 w-56 rounded-full bg-iris-500/10 blur-3xl"></div>
-					<div class="relative">
-						<div class="flex items-center justify-between">
-							<p class="section-title">Last active project</p>
-							{#if data.last_active_project}
-								<span class="chip bg-mint-400/10 text-mint-300 ring-mint-400/25">
-									<span class="h-1.5 w-1.5 rounded-full bg-current"></span> in progress
-								</span>
-							{/if}
-						</div>
-
-						{#if data.last_active_project}
-							{@const project = data.last_active_project}
-							<a href="/projects/{project.id}" class="group mt-4 block">
-								<h2 class="text-2xl font-semibold tracking-tight text-zinc-50 group-hover:text-white">
-									{project.name}
-								</h2>
-								<p class="mt-1.5 text-sm text-zinc-500">
-									Started {daysSince(project.started_at)} days ago · Last activity {relativeTime(project.last_activity_at)}
-								</p>
-							</a>
-
-							<div class="mt-5 grid grid-cols-2 gap-3">
-								<div class="rounded-xl border border-white/6 bg-ink-900/60 p-3.5">
-									<p class="text-[10px] font-semibold uppercase tracking-widest text-zinc-600">Current focus</p>
-									<p class="mt-1.5 flex items-center gap-1.5 truncate font-mono text-sm text-iris-200">
-										<Icon name="branch" size={13} />{focusBranch ?? 'main'}
-									</p>
-								</div>
-								<div class="rounded-xl border border-white/6 bg-ink-900/60 p-3.5">
-									<p class="text-[10px] font-semibold uppercase tracking-widest text-zinc-600">Activity</p>
-									<p class="mt-1.5 text-sm text-zinc-300">{project.event_count} events · {project.repository_count} repos</p>
-								</div>
-							</div>
-
-							<div class="mt-5">
-								<p class="section-title">Recent work</p>
-								<div class="mt-1 divide-y divide-white/5">
-									{#each data.recent_activity.filter((e) => e.project_id === project.id).slice(0, 4) as event}
-										<EventRow {event} />
-									{:else}
-										<p class="py-4 text-sm text-zinc-600">No recent events for this project.</p>
-									{/each}
-								</div>
-							</div>
+				<!-- Recent activity -->
+				<section class="panel p-5 sm:p-6 lg:col-span-3">
+					<div class="flex items-center justify-between">
+						<p class="section-title">Recent activity</p>
+						<a href="/projects" class="text-xs font-medium text-zinc-500 hover:text-zinc-300">View projects</a>
+					</div>
+					<div class="mt-2 divide-y divide-white/5">
+						{#each dashboard.recent_activity.slice(0, 8) as event}
+							<EventRow {event} showProject />
 						{:else}
-							<p class="mt-4 text-sm text-zinc-500">Connect a repository to see your current focus.</p>
-						{/if}
+							<p class="py-6 text-center text-sm text-zinc-600">Waiting for the first Git event.</p>
+						{/each}
 					</div>
 				</section>
 
@@ -167,45 +215,28 @@
 						</span>
 					</div>
 
-					{#if data.latest_summary}
-						<p class="mt-4 flex-1 text-[13px] leading-relaxed text-zinc-300">{data.latest_summary.summary}</p>
+					{#if dashboard.latest_summary}
+						<p class="mt-4 flex-1 text-[13px] leading-relaxed text-zinc-300">{dashboard.latest_summary.summary}</p>
 						<div class="mt-4 border-t border-white/6 pt-3">
 							<p class="text-[11px] text-zinc-600">
-								{summaryProject} · {relativeTime(data.latest_summary.created_at)}
+								{dashboard.last_active_project?.name ?? 'Project'} · {relativeTime(dashboard.latest_summary.created_at)}
 							</p>
-							<a href="/insights" class="mt-2 inline-flex items-center gap-1 text-xs font-medium text-mint-300 hover:text-mint-200">
-								All insights <Icon name="chevron-right" size={12} />
+							<a href="/chat" class="mt-2 inline-flex min-h-11 items-center gap-1 text-xs font-medium text-mint-300 hover:text-mint-200">
+								Ask about it <Icon name="chevron-right" size={12} />
 							</a>
 						</div>
 					{:else}
 						<div class="flex flex-1 flex-col items-center justify-center py-8 text-center">
 							<p class="text-sm text-zinc-400">No memories generated yet.</p>
 							<p class="mt-1 max-w-[24ch] text-xs text-zinc-600">Your timeline becomes a story once you ask DevFlow to summarise it.</p>
-							<a href="/insights" class="btn-secondary mt-4 text-xs"><Icon name="sparkles" size={14} /> Generate a summary</a>
+							<a href="/projects" class="btn-secondary mt-4 text-xs"><Icon name="sparkles" size={14} /> Open a project</a>
 						</div>
 					{/if}
 				</section>
 			</div>
 
-			<!-- Recent activity -->
-			<section class="panel p-5 sm:p-6">
-				<div class="flex items-center justify-between">
-					<p class="section-title">Recent activity</p>
-					<a href="/projects" class="text-xs font-medium text-zinc-500 hover:text-zinc-300">View projects</a>
-				</div>
-				<div class="mt-2 divide-y divide-white/5">
-					{#each data.recent_activity.slice(0, 8) as event}
-						<EventRow {event} showProject />
-					{:else}
-						<p class="py-6 text-center text-sm text-zinc-600">Waiting for the first Git event.</p>
-					{/each}
-				</div>
-			</section>
-
-			{#if data.last_active_project}
-				<div class="grid gap-4 sm:grid-cols-2 lg:hidden">
-					<ProjectCard project={data.last_active_project} />
-				</div>
+			{#if refreshing}
+				<p class="text-center text-[11px] text-zinc-600" aria-live="polite">Refreshing in the background…</p>
 			{/if}
 		{/if}
 	{/if}

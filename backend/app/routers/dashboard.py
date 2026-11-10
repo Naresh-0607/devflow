@@ -6,7 +6,7 @@ from app.deps import CurrentUser, DbSession
 from app.models import AISummary, GitEvent, Project, ProjectStatus, Repository
 from app.schemas import DashboardOut
 from app.serializers import event_out, project_out, summary_out
-from app.services.events import project_stats, recent_events_for_user
+from app.services.events import project_metrics_bulk, recent_events_for_user
 
 router = APIRouter(tags=["dashboard"])
 
@@ -55,7 +55,10 @@ async def get_dashboard(user: CurrentUser, db: DbSession) -> DashboardOut:
 
     last_project_out = None
     if last_project is not None:
-        last_activity, event_count, repo_count = await project_stats(db, last_project.id)
+        metrics = await project_metrics_bulk(db, [last_project.id])
+        last_activity, event_count, repo_count = metrics.get(
+            last_project.id, (None, 0, 0)
+        )
         last_project_out = project_out(last_project, last_activity, event_count, repo_count)
 
     return DashboardOut(

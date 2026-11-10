@@ -4,6 +4,7 @@
 	--font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
 	--font-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', monospace;
 
+	/* Surfaces (dark is the base palette; .light inverts these tokens). */
 	--color-ink-950: #07080c;
 	--color-ink-900: #0a0c12;
 	--color-ink-850: #0e1118;
@@ -13,6 +14,7 @@
 	--color-ink-600: #2b3347;
 	--color-ink-500: #3d4760;
 
+	/* Accents */
 	--color-mint-200: #c8ffe9;
 	--color-mint-300: #8ef5cd;
 	--color-mint-400: #4fe0ad;
@@ -24,6 +26,12 @@
 	--color-iris-400: #8b98ff;
 	--color-iris-500: #6b78f5;
 	--color-iris-600: #4f58d6;
+
+	/* Design tokens: spacing + radius */
+	--spacing-tap: 2.75rem;
+	--radius-card: 1rem;
+	--radius-control: 0.75rem;
+	--radius-pill: 999px;
 }
 
 @layer base {
@@ -34,14 +42,15 @@
 
 	body {
 		background-color: var(--color-ink-950);
-		color: #e8eaf0;
+		color: var(--color-zinc-100);
 		font-family: var(--font-sans);
 		-webkit-font-smoothing: antialiased;
+		text-rendering: optimizeLegibility;
 	}
 
 	::selection {
 		background: color-mix(in srgb, var(--color-mint-400) 30%, transparent);
-		color: #fff;
+		color: var(--color-zinc-50);
 	}
 
 	* {
@@ -55,7 +64,56 @@
 	}
 	*::-webkit-scrollbar-thumb {
 		background: var(--color-ink-600);
-		border-radius: 999px;
+		border-radius: var(--radius-pill);
+	}
+
+	/* Visible, consistent keyboard focus. */
+	:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+		outline: 2px solid var(--color-mint-500);
+		outline-offset: 2px;
+		border-radius: var(--radius-control);
+	}
+
+	/* Light theme: invert the surface + text palettes, keep accents readable. */
+	html.light {
+		color-scheme: light;
+	}
+
+	html.light {
+		--color-ink-950: #f4f6f9;
+		--color-ink-900: #ffffff;
+		--color-ink-850: #fbfcfd;
+		--color-ink-800: #f1f4f7;
+		--color-ink-750: #eceff3;
+		--color-ink-700: #e2e7ed;
+		--color-ink-600: #cbd2dc;
+		--color-ink-500: #aeb8c6;
+
+		/* Dark elements flip to dark-on-light; white overlays become ink tints. */
+		--color-white: #10151f;
+		--color-zinc-50: #0b1220;
+		--color-zinc-100: #141c2b;
+		--color-zinc-200: #223047;
+		--color-zinc-300: #334155;
+		--color-zinc-400: #475569;
+		--color-zinc-500: #64748b;
+		--color-zinc-600: #7c8798;
+
+		--color-mint-200: #0b5f47;
+		--color-mint-300: #0b7357;
+		--color-mint-400: #14a37a;
+		--color-mint-500: #128866;
+		--color-mint-600: #0f6b51;
+
+		--color-iris-200: #33306f;
+		--color-iris-300: #4b48c7;
+		--color-iris-400: #5a5fe0;
+		--color-iris-500: #4f58d6;
+		--color-iris-600: #3f45b5;
+
+		--color-sky-300: #0369a1;
+		--color-amber-300: #a16207;
+		--color-red-300: #b91c1c;
 	}
 }
 
@@ -68,28 +126,32 @@
 		@apply transition duration-200 hover:border-white/15 hover:bg-ink-800/90;
 	}
 
-	.btn {
-		@apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition duration-150 disabled:cursor-not-allowed disabled:opacity-50;
+	.btn,
+	.btn-primary,
+	.btn-secondary,
+	.btn-ghost,
+	.btn-danger {
+		@apply inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition duration-150 disabled:cursor-not-allowed disabled:opacity-50;
 	}
 
 	.btn-primary {
-		@apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition duration-150 disabled:cursor-not-allowed disabled:opacity-50 bg-mint-400 text-ink-950 hover:bg-mint-300 active:scale-[0.98];
+		@apply bg-mint-400 text-[#06110d] hover:bg-mint-300 active:scale-[0.98];
 	}
 
 	.btn-secondary {
-		@apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition duration-150 disabled:cursor-not-allowed disabled:opacity-50 border border-white/10 bg-white/5 text-zinc-200 hover:border-white/20 hover:bg-white/8;
+		@apply border border-white/10 bg-white/5 text-zinc-200 hover:border-white/20 hover:bg-white/8;
 	}
 
 	.btn-ghost {
-		@apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition duration-150 disabled:cursor-not-allowed disabled:opacity-50 text-zinc-400 hover:bg-white/5 hover:text-zinc-100;
+		@apply text-zinc-400 hover:bg-white/5 hover:text-zinc-100;
 	}
 
 	.btn-danger {
-		@apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition duration-150 disabled:cursor-not-allowed disabled:opacity-50 border border-red-500/25 bg-red-500/10 text-red-300 hover:bg-red-500/20;
+		@apply border border-red-500/25 bg-red-500/10 text-red-300 hover:bg-red-500/20;
 	}
 
 	.input {
-		@apply w-full rounded-xl border border-white/10 bg-ink-900 px-3.5 py-2.5 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-600 focus:border-mint-400/50 focus:ring-2 focus:ring-mint-400/15;
+		@apply min-h-11 w-full rounded-xl border border-white/10 bg-ink-900 px-3.5 py-2.5 text-base text-zinc-100 outline-none transition placeholder:text-zinc-600 focus:border-mint-400/50 focus:ring-2 focus:ring-mint-400/15 sm:text-sm;
 	}
 
 	.label {
@@ -116,6 +178,62 @@
 		content: '';
 		@apply absolute bottom-0 left-[15px] top-8 w-px bg-white/8;
 	}
+
+	/* Chat markdown. Raw HTML is escaped before it reaches this container. */
+	.chat-markdown {
+		@apply text-[14px] leading-relaxed text-zinc-200;
+	}
+	.chat-markdown > * + * {
+		@apply mt-2.5;
+	}
+	.chat-markdown h1,
+	.chat-markdown h2,
+	.chat-markdown h3 {
+		@apply font-semibold text-zinc-50;
+	}
+	.chat-markdown h1 {
+		@apply text-lg;
+	}
+	.chat-markdown h2 {
+		@apply text-base;
+	}
+	.chat-markdown h3 {
+		@apply text-sm uppercase tracking-wide text-zinc-300;
+	}
+	.chat-markdown strong {
+		@apply font-semibold text-zinc-50;
+	}
+	.chat-markdown em {
+		@apply italic;
+	}
+	.chat-markdown a {
+		@apply font-medium text-mint-300 underline decoration-mint-400/40 underline-offset-2 hover:text-mint-200;
+	}
+	.chat-markdown ul,
+	.chat-markdown ol {
+		@apply space-y-1 pl-5;
+	}
+	.chat-markdown ul {
+		@apply list-disc;
+	}
+	.chat-markdown ol {
+		@apply list-decimal;
+	}
+	.chat-markdown code {
+		@apply rounded-md bg-white/8 px-1.5 py-0.5 font-mono text-[12px] text-mint-200;
+	}
+	.chat-markdown pre {
+		@apply overflow-x-auto rounded-xl border border-white/8 bg-ink-900 p-3;
+	}
+	.chat-markdown pre code {
+		@apply bg-transparent p-0 text-[12px] text-zinc-200;
+	}
+	.chat-markdown blockquote {
+		@apply border-l-2 border-mint-400/40 pl-3 text-zinc-400;
+	}
+	.chat-markdown hr {
+		@apply border-white/8;
+	}
 }
 
 @keyframes fade-up {
@@ -133,8 +251,32 @@
 	animation: fade-up 0.35s ease-out both;
 }
 
+@keyframes dot-bounce {
+	0%,
+	80%,
+	100% {
+		transform: translateY(0);
+		opacity: 0.4;
+	}
+	40% {
+		transform: translateY(-3px);
+		opacity: 1;
+	}
+}
+
+.typing-dot {
+	animation: dot-bounce 1.2s infinite ease-in-out;
+}
+.typing-dot:nth-child(2) {
+	animation-delay: 0.15s;
+}
+.typing-dot:nth-child(3) {
+	animation-delay: 0.3s;
+}
+
 @media (prefers-reduced-motion: reduce) {
-	.animate-fade-up {
+	.animate-fade-up,
+	.typing-dot {
 		animation: none;
 	}
 }

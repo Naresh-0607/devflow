@@ -92,3 +92,19 @@ export interface InsightFeed {
 	summaries: Summary[];
 	projects: Project[];
 }
+
+export interface ChatHistoryMessage {
+	role: 'user' | 'assistant';
+	content: string;
+}
+
+export interface ChatReply {
+	answer: string;
+	tools_used: string[];
+}
+
+export interface ChatStreamHandlers {
+	onToken: (chunk: string) => void;
+	onTool?: (name: string) => void;
+	onDone: (answer: string, tools: string[]) => void;
+}

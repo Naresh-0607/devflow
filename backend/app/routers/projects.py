@@ -14,7 +14,7 @@ from app.schemas import (
     RepositoryOut,
 )
 from app.serializers import event_out, project_out, summary_out
-from app.services.events import list_events_for_project, project_stats
+from app.services.events import list_events_for_project, project_metrics_bulk, project_stats
 
 router = APIRouter(prefix="/projects", tags=["projects"])
 
@@ -38,10 +38,11 @@ async def list_projects(user: CurrentUser, db: DbSession) -> list[ProjectOut]:
             .where(Project.user_id == user.id)
             .order_by(Project.updated_at.desc())
         )
-    ).scalars()
+    ).scalars().all()
+    metrics = await project_metrics_bulk(db, [project.id for project in projects])
     result: list[ProjectOut] = []
     for project in projects:
-        last_activity, event_count, repo_count = await project_stats(db, project.id)
+        last_activity, event_count, repo_count = metrics.get(project.id, (None, 0, 0))
         result.append(project_out(project, last_activity, event_count, repo_count))
     return result
 

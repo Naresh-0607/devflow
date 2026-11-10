@@ -9,7 +9,7 @@ from app.models import AISummary, Project, SummaryType, utcnow
 from app.schemas import InsightFeed, ProjectOut, SummaryGenerate, SummaryOut
 from app.serializers import project_out, summary_out
 from app.services.ai import describe_event, generate_summary
-from app.services.events import events_in_window, project_stats
+from app.services.events import events_in_window, project_metrics_bulk
 
 router = APIRouter(tags=["insights"])
 
@@ -53,9 +53,10 @@ async def get_insights(
         )
     ).scalars().all()
 
+    metrics = await project_metrics_bulk(db, [project.id for project in projects])
     project_outputs: list[ProjectOut] = []
     for project in projects:
-        last_activity, event_count, repo_count = await project_stats(db, project.id)
+        last_activity, event_count, repo_count = metrics.get(project.id, (None, 0, 0))
         project_outputs.append(project_out(project, last_activity, event_count, repo_count))
 
     return InsightFeed(

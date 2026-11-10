@@ -46,19 +46,51 @@ requests return `429` with a `Retry-After` header. Configure with
 
 Statuses: `ACTIVE`, `PAUSED`, `COMPLETED`, `ARCHIVED`.
 
-## AI insights (Bearer)
+## AI summaries (Bearer)
 
 | Method | Path                          | Description                         |
 | ------ | ----------------------------- | ----------------------------------- |
-| GET    | `/insights`                   | Summary feed + project list         |
+| GET    | `/insights`                   | Summary feed + project list (API kept for compatibility; the UI uses `/chat`) |
 | GET    | `/projects/{id}/summaries`    | Summary history for a project       |
 | POST   | `/projects/{id}/summaries`    | Generate `DAILY`/`WEEKLY`/`PROJECT` |
+
+## Chat (Bearer)
+
+`POST /chat` answers questions about the calling user's own Git activity.
+
+```json
+{
+  "message": "What was I working on yesterday?",
+  "history": [{ "role": "user", "content": "Hi" }],
+  "timezone": "Asia/Kolkata",
+  "stream": true
+}
+```
+
+- `history` is optional (max 30 messages); `timezone` must be an IANA name.
+- `stream: true` returns `text/event-stream` frames: `token`, `tool`, `done`,
+  `error`. The default is a JSON `{ answer, tools_used }`.
+- The model can only call fixed read-only tools, all scoped to the
+  authenticated user: `list_projects`, `get_project`, `get_timeline`,
+  `search_events`, `get_summaries`, `get_stats`. Result sizes are capped and
+  the model never receives SQL access.
+- Commit messages and event payloads are treated as untrusted data. If nothing
+  matches, the answer is exactly `I don't see that in your activity.`
+- Without a `GROQ_API_KEY` the endpoint uses a deterministic keyword fallback
+  over the same tools.
+- Rate limited per user (default 20 requests/minute). Configure with
+  `CHAT_RATE_LIMIT_PER_MINUTE`; over-limit requests return `429` and
+  `Retry-After`.
 
 ## Dashboard (Bearer)
 
 `GET /dashboard` → active/total projects, total events, last active project,
-recent activity and the latest summary.
+recent activity and the latest summary. One call powers the whole dashboard.
 
 ## System
 
-`GET /health` → status, version and whether the AI layer is enabled.
+`GET /health` → status, version and whether the AI layer is enabled. The
+frontend pings it once per session to wake a sleeping Render instance.
+
+Responses include `Server-Timing: app;dur=…`; JSON responses above 500 bytes are
+gzip-compressed (SSE streams are not).

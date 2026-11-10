@@ -1,12 +1,16 @@
 <script lang="ts">
-	import { createProject, fetchProjects } from '#lib/api';
+	import { createProject, fetchProjects, writeCache } from '#lib/api';
 	import Icon from '#lib/components/Icon.svelte';
 	import ProjectCard from '#lib/components/ProjectCard.svelte';
+	import type { SwrResult } from '#lib/load';
 	import type { Project, ProjectStatus } from '#lib/types';
-	import { onMount } from 'svelte';
 
-	let projects = $state<Project[]>([]);
-	let loading = $state(true);
+	let { data }: { data: SwrResult<Project[]> } = $props();
+
+	// svelte-ignore state_referenced_locally
+	let projects = $state<Project[]>(data.cached ?? []);
+	// svelte-ignore state_referenced_locally
+	let loading = $state(!data.cached);
 	let error = $state('');
 	let query = $state('');
 	let statusFilter = $state<'ALL' | ProjectStatus>('ALL');
@@ -30,11 +34,29 @@
 		})
 	);
 
+	$effect(() => {
+		let active = true;
+		data.fresh.then((result) => {
+			if (!active) return;
+			if (result.data) {
+				projects = result.data;
+				error = '';
+			} else {
+				error = result.error ?? 'Could not load projects';
+			}
+			loading = false;
+		});
+		return () => {
+			active = false;
+		};
+	});
+
 	async function load() {
-		loading = true;
+		loading = !projects.length;
 		error = '';
 		try {
 			projects = await fetchProjects();
+			writeCache('/projects', projects);
 		} catch (err) {
 			error = err instanceof Error ? err.message : 'Could not load projects';
 		} finally {
@@ -52,6 +74,7 @@
 				description: newDescription.trim() || undefined
 			});
 			projects = [project, ...projects];
+			writeCache('/projects', projects);
 			showCreate = false;
 			newName = '';
 			newDescription = '';
@@ -62,7 +85,6 @@
 		}
 	}
 
-	onMount(load);
 </script>
 
 <svelte:head><title>Projects — DevFlow</title></svelte:head>

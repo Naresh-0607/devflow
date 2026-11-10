@@ -1,8 +1,9 @@
 import uuid
 from datetime import datetime
-from typing import Any
+from typing import Any, Literal
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 from app.models import EventType, ProjectStatus, SummaryType
 
@@ -170,3 +171,30 @@ class DashboardOut(BaseModel):
 class InsightFeed(BaseModel):
     summaries: list[SummaryOut]
     projects: list[ProjectOut]
+
+
+# ---------- Chat ----------
+class ChatMessage(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str = Field(min_length=1, max_length=8000)
+
+
+class ChatRequest(BaseModel):
+    message: str = Field(min_length=1, max_length=4000)
+    history: list[ChatMessage] = Field(default_factory=list, max_length=30)
+    timezone: str = Field(default="UTC", max_length=64)
+    stream: bool = False
+
+    @field_validator("timezone")
+    @classmethod
+    def valid_timezone(cls, value: str) -> str:
+        try:
+            ZoneInfo(value)
+        except (ZoneInfoNotFoundError, ValueError):
+            raise ValueError("Unknown timezone. Use an IANA name such as Asia/Kolkata.")
+        return value
+
+
+class ChatResponse(BaseModel):
+    answer: str
+    tools_used: list[str] = Field(default_factory=list)
