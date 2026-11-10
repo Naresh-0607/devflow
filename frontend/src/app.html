@@ -4,7 +4,8 @@
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 		<meta name="text-scale" content="scale" />
-		<meta name="theme-color" content="#07080c" />
+		<meta name="color-scheme" content="dark light" />
+		<meta name="theme-color" content="#0B0D10" />
 		<meta name="description" content="DevFlow — your AI-powered developer memory. It remembers what you were building." />
 		<link rel="manifest" href="/manifest.webmanifest" />
 		<link rel="icon" href="/icon.svg" type="image/svg+xml" />
@@ -12,12 +13,6 @@
 		<meta name="apple-mobile-web-app-capable" content="yes" />
 		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 		<meta name="apple-mobile-web-app-title" content="DevFlow" />
-		<link rel="preconnect" href="https://fonts.googleapis.com" />
-		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-		<link
-			href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
-			rel="stylesheet"
-		/>
 		<script>
 			// Apply the saved/system theme before first paint to avoid a flash.
 			(function () {
@@ -29,6 +24,8 @@
 					document.documentElement.classList.toggle('light', !dark);
 					document.documentElement.dataset.theme = mode;
 					document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
+					var meta = document.querySelector('meta[name="theme-color"]');
+					if (meta) meta.setAttribute('content', dark ? '#0B0D10' : '#FAFAF9');
 				} catch (error) {
 					/* default dark palette */
 				}

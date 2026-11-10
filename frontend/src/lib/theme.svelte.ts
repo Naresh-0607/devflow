@@ -58,7 +58,7 @@ class ThemeStore {
 		document.documentElement.style.colorScheme = this.resolved;
 		document.documentElement.dataset.theme = this.mode;
 		const meta = document.querySelector('meta[name="theme-color"]');
-		if (meta) meta.setAttribute('content', light ? '#f6f7f9' : '#07080c');
+		if (meta) meta.setAttribute('content', light ? '#FAFAF9' : '#0B0D10');
 	}
 }
 

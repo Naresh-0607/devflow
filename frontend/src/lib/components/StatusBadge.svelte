@@ -4,7 +4,7 @@
 	let { status }: { status: string } = $props();
 </script>
 
-<span class="chip {statusStyle(status)}">
+<span class="pill {statusStyle(status)}">
 	<span class="h-1.5 w-1.5 rounded-full bg-current"></span>
-	{status.toLowerCase()}
+	{status.charAt(0) + status.slice(1).toLowerCase()}
 </span>

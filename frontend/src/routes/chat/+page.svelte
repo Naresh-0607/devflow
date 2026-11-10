@@ -187,21 +187,14 @@
 <svelte:head><title>Ask DevFlow</title></svelte:head>
 
 <div class="flex h-full min-h-0 flex-col">
-	<header class="flex flex-none items-start justify-between gap-3 pb-3">
+	<header class="flex flex-none items-start justify-between gap-3 pb-4">
 		<div class="min-w-0">
-			<div class="flex items-center gap-2">
-				<span class="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-iris-500/25 to-mint-400/15 text-iris-200 ring-1 ring-inset ring-white/10">
-					<Icon name="message" size={17} />
-				</span>
-				<div class="min-w-0">
-					<h1 class="truncate text-lg font-semibold tracking-tight text-zinc-50">Ask DevFlow</h1>
-					<p class="truncate text-[11px] text-zinc-500">Answers only from your Git activity.</p>
-				</div>
-			</div>
+			<h1 class="text-3xl font-semibold tracking-tight text-text">Ask DevFlow</h1>
+			<p class="mt-1 truncate text-sm text-muted">Answers only from your Git activity.</p>
 		</div>
 		<button
 			type="button"
-			class="btn-secondary shrink-0 px-3 text-xs"
+			class="btn-secondary shrink-0"
 			onclick={newChat}
 			disabled={messages.length === 0}
 		>
@@ -211,18 +204,18 @@
 
 	<div
 		bind:this={scroller}
-		class="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain rounded-2xl border border-white/6 bg-ink-900/40 p-3 sm:p-4"
+		class="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain rounded-card border border-border bg-surface p-3 sm:p-5"
 		role="log"
 		aria-live={sending ? 'off' : 'polite'}
 		aria-label="Conversation"
 	>
 		{#if messages.length === 0}
-			<div class="flex min-h-full flex-col items-center justify-center px-2 py-6 text-center">
-				<span class="grid h-12 w-12 place-items-center rounded-2xl bg-mint-400/10 text-mint-300 ring-1 ring-inset ring-mint-400/20">
-					<Icon name="sparkles" size={22} />
+			<div class="flex min-h-full flex-col items-center justify-center px-2 py-8 text-center">
+				<span class="grid h-11 w-11 place-items-center rounded-control border border-accent/25 bg-accent-soft text-accent">
+					<Icon name="sparkles" size={20} />
 				</span>
-				<h2 class="mt-4 text-lg font-semibold text-zinc-100">What do you want to remember?</h2>
-				<p class="mt-1 max-w-sm text-sm text-zinc-500">
+				<h2 class="mt-4 text-xl font-semibold text-text">What do you want to remember?</h2>
+				<p class="mt-1.5 max-w-sm text-sm leading-relaxed text-muted">
 					Ask about projects, commits, branches or what you worked on. DevFlow reads your own
 					activity — nothing else.
 				</p>
@@ -230,7 +223,7 @@
 					{#each suggestions as suggestion}
 						<button
 							type="button"
-							class="min-h-11 rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-left text-[13px] text-zinc-300 transition hover:border-white/20 hover:bg-white/8 hover:text-zinc-100"
+							class="min-h-11 rounded-control border border-border bg-bg px-3 py-2.5 text-left text-sm text-muted transition duration-150 hover:border-accent/40 hover:text-text"
 							onclick={() => submit(suggestion)}
 						>
 							{suggestion}
@@ -240,44 +233,47 @@
 			</div>
 		{:else}
 			{#each messages as message (message.id)}
-				<div
-					class="flex gap-2.5 {message.role === 'user' ? 'justify-end' : 'justify-start'}"
-				>
+				<div class="flex gap-2.5 {message.role === 'user' ? 'justify-end' : 'justify-start'}">
 					{#if message.role === 'assistant'}
-						<span class="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-iris-500/25 to-mint-400/15 text-mint-200 ring-1 ring-inset ring-white/10">
+						<span
+							class="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-[6px] border border-accent/25 bg-accent-soft text-accent"
+						>
 							<Icon name="sparkles" size={13} />
 						</span>
 					{/if}
 
 					<div
-						class="min-w-0 max-w-[85%] rounded-2xl px-3.5 py-2.5 sm:max-w-[78%] {message.role === 'user'
-							? 'rounded-br-md bg-mint-400 text-[#06110d]'
-							: 'rounded-bl-md border border-white/8 bg-ink-850 text-zinc-200'}"
+						class="min-w-0 max-w-[85%] rounded-card px-3.5 py-2.5 sm:max-w-[78%] {message.role ===
+						'user'
+							? 'rounded-br-[4px] bg-accent text-white'
+							: 'rounded-bl-[4px] border border-border bg-raised text-text'}"
 					>
 						{#if message.role === 'user'}
-							<p class="whitespace-pre-wrap text-[14px] leading-relaxed">{message.content}</p>
+							<p class="whitespace-pre-wrap text-sm leading-relaxed">{message.content}</p>
 						{:else if message.streaming && !message.content}
-							<div class="flex items-center gap-2 text-[13px] text-zinc-400">
+							<div class="flex items-center gap-2 text-sm text-muted">
 								<span class="flex items-center gap-1" aria-hidden="true">
-									<span class="typing-dot h-1.5 w-1.5 rounded-full bg-mint-300"></span>
-									<span class="typing-dot h-1.5 w-1.5 rounded-full bg-mint-300"></span>
-									<span class="typing-dot h-1.5 w-1.5 rounded-full bg-mint-300"></span>
+									<span class="typing-dot h-1.5 w-1.5 rounded-full bg-accent"></span>
+									<span class="typing-dot h-1.5 w-1.5 rounded-full bg-accent"></span>
+									<span class="typing-dot h-1.5 w-1.5 rounded-full bg-accent"></span>
 								</span>
 								<span>{message.tool ? toolLabels[message.tool] ?? 'Looking that up' : 'Thinking'}…</span>
 							</div>
 						{:else if message.streaming}
-							<p class="whitespace-pre-wrap text-[14px] leading-relaxed text-zinc-200">
-								{message.content}<span class="ml-0.5 inline-block h-4 w-1 animate-pulse bg-mint-300 align-middle"></span>
+							<p class="whitespace-pre-wrap text-sm leading-relaxed text-text">
+								{message.content}<span
+									class="ml-0.5 inline-block h-4 w-1 animate-pulse bg-accent align-middle"
+								></span>
 							</p>
 							{#if message.tool}
-								<p class="mt-2 flex items-center gap-1.5 text-[11px] text-zinc-500">
-									<span class="h-1.5 w-1.5 animate-pulse rounded-full bg-iris-300"></span>
+								<p class="mt-2 flex items-center gap-1.5 text-xs text-muted">
+									<span class="h-1.5 w-1.5 animate-pulse rounded-full bg-accent"></span>
 									{toolLabels[message.tool] ?? 'Looking that up'}…
 								</p>
 							{/if}
 						{:else if message.error}
 							<div>
-								<p class="flex items-start gap-2 text-[13px] leading-relaxed text-red-300">
+								<p class="flex items-start gap-2 text-sm leading-relaxed text-danger">
 									<Icon name="alert" size={15} class="mt-0.5 shrink-0" />
 									<span>{message.error}</span>
 								</p>
@@ -293,9 +289,11 @@
 						{:else}
 							<Markdown source={message.content} />
 							{#if message.tools?.length}
-								<p class="mt-2 flex flex-wrap items-center gap-1 text-[10px] text-zinc-600">
+								<p class="mt-2 flex flex-wrap items-center gap-1 text-[10px] text-muted">
 									{#each message.tools as tool}
-										<span class="rounded-full bg-white/5 px-2 py-0.5">{tool.replaceAll('_', ' ')}</span>
+										<span class="rounded-pill border border-border px-2 py-0.5">
+											{tool.replaceAll('_', ' ')}
+										</span>
 									{/each}
 								</p>
 							{/if}
@@ -337,7 +335,7 @@
 			<Icon name="send" size={17} />
 		</button>
 	</form>
-	<p class="flex-none pt-1.5 text-center text-[10px] text-zinc-600">
+	<p class="flex-none pt-1.5 text-center text-xs text-muted">
 		DevFlow reads your activity only. Press Enter to send, Shift+Enter for a new line.
 	</p>
 </div>

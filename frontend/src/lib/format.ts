@@ -69,10 +69,10 @@ export function eventBranch(payload: Record<string, unknown>): string | null {
 }
 
 const STATUS_STYLES: Record<string, string> = {
-	ACTIVE: 'bg-mint-400/10 text-mint-300 ring-mint-400/30',
-	PAUSED: 'bg-amber-400/10 text-amber-300 ring-amber-400/30',
-	COMPLETED: 'bg-sky-400/10 text-sky-300 ring-sky-400/30',
-	ARCHIVED: 'bg-white/5 text-zinc-400 ring-white/10'
+	ACTIVE: 'border-success/30 bg-success/10 text-success',
+	PAUSED: 'border-warning/30 bg-warning/10 text-warning',
+	COMPLETED: 'border-info/30 bg-info/10 text-info',
+	ARCHIVED: 'border-border bg-raised text-muted'
 };
 
 export function statusStyle(status: string): string {

@@ -50,19 +50,19 @@
 		</div>
 
 		{#if error}
-			<div class="flex items-start gap-2 rounded-xl border border-red-500/20 bg-red-500/8 px-3 py-2.5 text-xs text-red-300">
+			<div class="flex items-start gap-2 rounded-control border border-danger/30 bg-danger/10 px-3 py-2.5 text-xs text-danger">
 				<Icon name="alert" size={14} class="mt-0.5 shrink-0" />{error}
 			</div>
 		{/if}
 
 		<button type="submit" class="btn-primary w-full" disabled={loading}>
-			{#if loading}<span class="h-4 w-4 animate-spin rounded-full border-2 border-ink-950/25 border-t-ink-950"></span>{/if}
+			{#if loading}<span class="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white"></span>{/if}
 			{loading ? 'Creating account…' : 'Create account'}
 		</button>
 	</form>
 
-	<p class="mt-6 text-center text-sm text-zinc-500">
+	<p class="mt-6 text-center text-sm text-muted">
 		Already have an account?
-		<a href="/login" class="font-medium text-mint-300 hover:text-mint-200">Sign in</a>
+		<a href="/login" class="font-medium text-accent hover:text-accent-hover">Sign in</a>
 	</p>
 </AuthShell>

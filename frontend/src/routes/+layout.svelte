@@ -6,7 +6,7 @@
 	import { auth } from '#lib/auth.svelte';
 	import Icon from '#lib/components/Icon.svelte';
 	import Logo from '#lib/components/Logo.svelte';
-	import ThemeToggle from '#lib/components/ThemeToggle.svelte';
+	import Toaster from '#lib/components/Toaster.svelte';
 	import { theme } from '#lib/theme.svelte';
 	import { onMount } from 'svelte';
 	import type { LayoutProps } from './$types';
@@ -32,14 +32,23 @@
 	const initial = $derived(auth.user?.email?.[0]?.toUpperCase() ?? '?');
 
 	let navigationStarted = 0;
+	let contentEl = $state<HTMLElement>();
+
 	beforeNavigate(() => {
 		navigationStarted = performance.now();
 	});
 	afterNavigate(() => {
-		if (!navigationStarted) return;
-		const duration = performance.now() - navigationStarted;
-		navigationStarted = 0;
-		console.debug(`[devflow] route ${page.url.pathname} settled in ${duration.toFixed(0)}ms`);
+		if (navigationStarted) {
+			const duration = performance.now() - navigationStarted;
+			navigationStarted = 0;
+			console.debug(`[devflow] route ${page.url.pathname} settled in ${duration.toFixed(0)}ms`);
+		}
+
+		// Replay the subtle route transition on each navigation.
+		if (!contentEl) return;
+		contentEl.classList.remove('page-enter');
+		void contentEl.offsetWidth;
+		contentEl.classList.add('page-enter');
 	});
 
 	onMount(() => {
@@ -70,22 +79,19 @@
 {#if authPage}
 	{@render children()}
 {:else if !auth.ready}
-	<div class="grid min-h-dvh place-items-center">
-		<div class="flex items-center gap-3 text-sm text-zinc-500">
-			<span class="h-4 w-4 animate-spin rounded-full border-2 border-white/15 border-t-mint-400"></span>
+	<div class="grid min-h-dvh place-items-center bg-bg">
+		<div class="flex items-center gap-3 text-sm text-muted">
+			<span class="h-4 w-4 animate-spin rounded-full border-2 border-border border-t-accent"></span>
 			Opening your memory…
 		</div>
 	</div>
 {:else}
-	<div class="flex min-h-dvh flex-col bg-ink-950">
-		<!-- ambient glow -->
-		<div class="pointer-events-none fixed inset-x-0 top-0 z-0 h-72 bg-[radial-gradient(60%_100%_at_50%_0%,rgba(79,224,173,0.07),transparent_70%)]"></div>
-
+	<div class="flex min-h-dvh flex-col bg-bg">
 		<!-- Desktop sidebar -->
 		<aside
-			class="fixed inset-y-0 left-0 z-30 hidden w-60 flex-col border-r border-white/6 bg-ink-900/70 px-4 py-5 backdrop-blur-xl md:flex"
+			class="fixed inset-y-0 left-0 z-30 hidden w-60 flex-col border-r border-border bg-surface px-3 py-5 lg:flex"
 		>
-			<div class="px-2"><Logo /></div>
+			<div class="px-2"><Logo size={30} /></div>
 
 			<nav class="mt-8 flex flex-col gap-1" aria-label="Primary">
 				{#each navItems as item}
@@ -93,39 +99,37 @@
 						href={item.href}
 						data-sveltekit-preload-data="hover"
 						aria-current={isActive(item.href) ? 'page' : undefined}
-						class="flex min-h-11 items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition {isActive(item.href)
-							? 'bg-white/8 text-zinc-50'
-							: 'text-zinc-500 hover:bg-white/5 hover:text-zinc-200'}"
+						class="flex min-h-11 items-center gap-3 rounded-control px-3 text-sm font-medium transition duration-150 {isActive(
+							item.href
+						)
+							? 'bg-accent-soft text-text'
+							: 'text-muted hover:bg-raised hover:text-text'}"
 					>
-						<Icon name={item.icon} size={17} class={isActive(item.href) ? 'text-mint-300' : ''} />
+						<Icon
+							name={item.icon}
+							size={17}
+							class={isActive(item.href) ? 'text-accent' : ''}
+						/>
 						{item.label}
-						{#if isActive(item.href)}
-							<span class="ml-auto h-1.5 w-1.5 rounded-full bg-mint-400"></span>
-						{/if}
 					</a>
 				{/each}
 			</nav>
 
-			<div class="mt-auto space-y-3">
-				<ThemeToggle />
-				<div class="rounded-xl border border-white/6 bg-ink-850 p-3">
-					<p class="text-[10px] font-semibold uppercase tracking-widest text-zinc-600">Agent status</p>
-					<p class="mt-1.5 flex items-center gap-1.5 text-xs text-zinc-400">
-						<span class="h-1.5 w-1.5 rounded-full bg-mint-400 shadow-[0_0_8px_rgba(79,224,173,0.8)]"></span>
-						Ready to remember
-					</p>
-				</div>
-				<div class="flex items-center gap-2.5 rounded-xl px-2 py-1.5">
-					<div class="grid h-8 w-8 place-items-center rounded-full bg-iris-500/20 text-xs font-semibold text-iris-200 ring-1 ring-inset ring-iris-400/30">
+			<div class="mt-auto border-t border-border pt-3">
+				<div class="flex items-center gap-2.5 rounded-control px-2 py-2">
+					<span
+						class="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-border bg-raised text-xs font-semibold text-text"
+					>
 						{initial}
-					</div>
+					</span>
 					<div class="min-w-0 flex-1">
-						<p class="truncate text-xs font-medium text-zinc-300">{auth.user?.email}</p>
-						<p class="text-[10px] text-zinc-600">Developer</p>
+						<p class="truncate text-xs font-medium text-text">{auth.user?.email}</p>
+						<p class="text-xs text-muted">Developer</p>
 					</div>
 					<button
+						type="button"
 						onclick={() => auth.logout()}
-						class="grid h-11 w-11 place-items-center rounded-xl text-zinc-600 transition hover:bg-white/5 hover:text-zinc-300"
+						class="btn-icon"
 						aria-label="Log out"
 					>
 						<Icon name="logout" size={15} />
@@ -134,44 +138,44 @@
 			</div>
 		</aside>
 
-		<!-- Mobile header -->
-		<header
-			class="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-white/6 bg-ink-950/80 px-3 backdrop-blur-xl md:hidden"
-		>
-			<Logo size={28} />
-			<div class="flex items-center gap-1">
-				<ThemeToggle compact />
+		<div class="flex min-h-dvh flex-1 flex-col lg:pl-60">
+			<!-- Mobile header -->
+			<header
+				class="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-border bg-bg/90 px-4 backdrop-blur-md lg:hidden"
+			>
+				<Logo size={28} />
 				<a
 					href="/settings"
-					class="grid h-11 w-11 place-items-center rounded-full"
+					class="grid h-11 w-11 place-items-center rounded-control"
 					aria-label="Account settings"
 				>
-					<span class="grid h-8 w-8 place-items-center rounded-full bg-iris-500/20 text-xs font-semibold text-iris-200 ring-1 ring-inset ring-iris-400/30">
+					<span
+						class="grid h-8 w-8 place-items-center rounded-full border border-border bg-raised text-xs font-semibold text-text"
+					>
 						{initial}
 					</span>
 				</a>
-			</div>
-		</header>
+			</header>
 
-		<main
-			class={isChat
-				? 'relative z-10 flex min-h-0 flex-1 flex-col px-3 pb-20 pt-3 sm:px-6 md:ml-60 md:px-8 md:pb-8 md:pt-6'
-				: 'relative z-10 px-4 pb-28 pt-6 sm:px-6 md:ml-60 md:px-8 md:pb-12 md:pt-8'}
-		>
-			{#if isChat}
-				<div class="mx-auto flex min-h-0 w-full max-w-3xl flex-1 flex-col">
+			<main
+				class={isChat
+					? 'flex min-h-0 flex-1 flex-col px-3 pb-[calc(4.5rem+env(safe-area-inset-bottom))] pt-3 sm:px-6 lg:px-8 lg:pb-6 lg:pt-6'
+					: 'flex-1 px-4 pb-28 pt-6 sm:px-6 lg:px-8 lg:pb-16 lg:pt-10'}
+			>
+				<div
+					bind:this={contentEl}
+					class={isChat
+						? 'page-enter mx-auto flex h-full min-h-0 w-full max-w-3xl flex-1 flex-col'
+						: 'page-enter mx-auto w-full max-w-[960px]'}
+				>
 					{@render children()}
 				</div>
-			{:else}
-				<div class="mx-auto w-full max-w-5xl animate-fade-up">
-					{@render children()}
-				</div>
-			{/if}
-		</main>
+			</main>
+		</div>
 
 		<!-- Mobile bottom nav -->
 		<nav
-			class="fixed inset-x-0 bottom-0 z-30 border-t border-white/8 bg-ink-900/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl md:hidden"
+			class="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md lg:hidden"
 			aria-label="Primary"
 		>
 			<div class="grid grid-cols-4">
@@ -180,15 +184,25 @@
 						href={item.href}
 						data-sveltekit-preload-data="hover"
 						aria-current={isActive(item.href) ? 'page' : undefined}
-						class="flex min-h-14 flex-col items-center justify-center gap-1 py-2 text-[10px] font-medium transition {isActive(item.href)
-							? 'text-mint-300'
-							: 'text-zinc-500'}"
+						class="relative flex min-h-14 flex-col items-center justify-center gap-1 py-2 text-[11px] font-medium transition {isActive(
+							item.href
+						)
+							? 'text-accent'
+							: 'text-muted'}"
 					>
+						{#if isActive(item.href)}
+							<span
+								class="absolute inset-x-0 top-0 mx-auto h-0.5 w-8 rounded-full bg-accent"
+								aria-hidden="true"
+							></span>
+						{/if}
 						<Icon name={item.icon} size={19} />
 						{item.short}
 					</a>
 				{/each}
 			</div>
 		</nav>
+
+		<Toaster />
 	</div>
 {/if}

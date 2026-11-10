@@ -1,12 +1,14 @@
 <script lang="ts">
 	import { fetchDashboard, writeCache } from '#lib/api';
+	import EmptyState from '#lib/components/EmptyState.svelte';
 	import EventRow from '#lib/components/EventRow.svelte';
 	import Icon from '#lib/components/Icon.svelte';
-	import StatCard from '#lib/components/StatCard.svelte';
+	import PageHeader from '#lib/components/PageHeader.svelte';
+	import Sparkline from '#lib/components/Sparkline.svelte';
 	import StatusBadge from '#lib/components/StatusBadge.svelte';
 	import { daysSince, eventBranch, relativeTime } from '#lib/format';
 	import type { SwrResult } from '#lib/load';
-	import type { Dashboard } from '#lib/types';
+	import type { Dashboard, ProjectStatus } from '#lib/types';
 
 	let { data }: { data: SwrResult<Dashboard> } = $props();
 
@@ -64,179 +66,239 @@
 		);
 		return event ? eventBranch(event.payload) : null;
 	});
+
+	type Pulse = {
+		id: string;
+		name: string;
+		last: string;
+		branch: string | null;
+		status: ProjectStatus | null;
+		series: number[];
+	};
+
+	function daySeries(projectId: string): number[] {
+		const series = Array.from({ length: 14 }, () => 0);
+		const now = new Date();
+		const start =
+			new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime() - 13 * 86400000;
+		for (const event of dashboard?.recent_activity ?? []) {
+			if (event.project_id !== projectId) continue;
+			const date = new Date(event.created_at);
+			const bucket = Math.round(
+				(new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime() - start) /
+					86400000
+			);
+			if (bucket >= 0 && bucket < 14) series[bucket] += 1;
+		}
+		return series;
+	}
+
+	// Only real activity is shown: projects that appear in the recent timeline.
+	const recentProjects = $derived.by(() => {
+		const map = new Map<string, Pulse>();
+		const focus = dashboard?.last_active_project ?? null;
+		for (const event of dashboard?.recent_activity ?? []) {
+			if (!event.project_id) continue;
+			const branch = eventBranch(event.payload);
+			const existing = map.get(event.project_id);
+			if (!existing) {
+				map.set(event.project_id, {
+					id: event.project_id,
+					name: event.project_name ?? 'Project',
+					last: event.created_at,
+					branch,
+					status: focus?.id === event.project_id ? focus.status : null,
+					series: []
+				});
+			} else {
+				if (new Date(event.created_at) > new Date(existing.last)) existing.last = event.created_at;
+				if (!existing.branch && branch) existing.branch = branch;
+			}
+		}
+		return [...map.values()]
+			.slice(0, 4)
+			.map((project) => ({ ...project, series: daySeries(project.id) }));
+	});
 </script>
 
 <svelte:head><title>Dashboard — DevFlow</title></svelte:head>
 
-<div class="flex flex-col gap-5 sm:gap-6">
-	<div class="flex flex-wrap items-end justify-between gap-3">
-		<div>
-			<p class="text-xs font-medium uppercase tracking-[0.2em] text-mint-400/80">{greeting}</p>
-			<h1 class="mt-1.5 text-2xl font-semibold tracking-tight text-zinc-50 sm:text-3xl">
-				Here's what you were building.
-			</h1>
-		</div>
-		<a href="/projects" class="btn-secondary hidden sm:inline-flex">
+<div class="flex flex-col gap-8">
+	<PageHeader title={greeting} subtitle="Here's what you were building, and where you left off.">
+		<a href="/projects" class="btn-secondary">
 			<Icon name="folder" size={15} /> All projects
 		</a>
-	</div>
+	</PageHeader>
 
 	{#if loading}
-		<div class="panel h-56 p-6 sm:h-52">
+		<div class="card h-64 p-6 sm:p-8">
 			<div class="skeleton h-3 w-40"></div>
 			<div class="skeleton mt-5 h-8 w-2/3"></div>
 			<div class="skeleton mt-3 h-4 w-1/2"></div>
-			<div class="mt-6 flex gap-3"><div class="skeleton h-10 w-32"></div><div class="skeleton h-10 w-32"></div></div>
+			<div class="skeleton mt-6 h-10 w-36"></div>
 		</div>
-		<div class="grid gap-4 sm:grid-cols-3">
-			{#each Array(3) as _}
-				<div class="panel h-28 p-5"><div class="skeleton h-3 w-20"></div><div class="skeleton mt-4 h-8 w-14"></div></div>
+		<div class="grid gap-3 sm:grid-cols-2">
+			{#each Array(2) as _}
+				<div class="card h-32 p-5">
+					<div class="skeleton h-4 w-1/2"></div>
+					<div class="skeleton mt-3 h-3 w-2/3"></div>
+					<div class="skeleton mt-5 h-6 w-full"></div>
+				</div>
 			{/each}
 		</div>
-		<div class="grid gap-4 lg:grid-cols-5">
-			<div class="panel h-72 lg:col-span-3"><div class="skeleton m-5 h-4 w-28"></div></div>
-			<div class="panel h-72 lg:col-span-2"><div class="skeleton m-5 h-4 w-28"></div></div>
+		<div class="card h-80 p-5">
+			<div class="skeleton h-4 w-32"></div>
+			<div class="skeleton mt-5 h-12 w-full"></div>
+			<div class="skeleton mt-3 h-12 w-full"></div>
+			<div class="skeleton mt-3 h-12 w-full"></div>
 		</div>
 	{:else if error && !dashboard}
-		<div class="panel flex flex-col items-center gap-4 p-10 text-center">
-			<Icon name="alert" size={28} class="text-amber-300" />
+		<div class="card flex flex-col items-center gap-4 p-10 text-center">
+			<Icon name="alert" size={24} class="text-warning" />
 			<div>
-				<p class="font-medium text-zinc-200">Could not reach your memory</p>
-				<p class="mt-1 text-sm text-zinc-500">{error}</p>
+				<p class="text-sm font-medium text-text">Could not reach your memory</p>
+				<p class="mt-1 text-sm text-muted">{error}</p>
 			</div>
 			<button class="btn-secondary" onclick={reload}><Icon name="refresh" size={15} /> Retry</button>
 		</div>
 	{:else if dashboard}
 		{#if dashboard.total_projects === 0}
-			<div class="panel relative overflow-hidden p-6 sm:p-10">
-				<div class="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-mint-400/10 blur-3xl"></div>
-				<div class="relative max-w-xl">
-					<div class="grid h-12 w-12 place-items-center rounded-2xl bg-mint-400/10 text-mint-300 ring-1 ring-inset ring-mint-400/20">
-						<Icon name="zap" size={22} />
-					</div>
-					<h2 class="mt-5 text-xl font-semibold text-zinc-50">Your memory starts with one commit.</h2>
-					<p class="mt-2 text-sm leading-relaxed text-zinc-400">
-						Install the DevFlow agent, connect your machine, and every commit, branch and push
-						becomes part of a timeline you can actually remember.
-					</p>
-					<div class="mt-6 flex flex-wrap gap-3">
-						<a href="/settings" class="btn-primary"><Icon name="key" size={15} /> Connect a device</a>
-						<a href="/projects" class="btn-secondary"><Icon name="plus" size={15} /> Create a project</a>
-					</div>
-				</div>
-			</div>
+			<EmptyState
+				icon="sparkles"
+				title="Your memory starts with one commit."
+				description="Install the DevFlow agent, connect your machine, and every commit, branch and push becomes part of a timeline you can actually remember."
+			>
+				<a href="/settings" class="btn-primary"><Icon name="key" size={15} /> Connect your laptop</a>
+				<a href="/projects" class="btn-secondary"><Icon name="plus" size={15} /> Create a project</a>
+			</EmptyState>
 		{:else}
 			<!-- Hero: the first thing visible on a phone. -->
 			{#if dashboard.last_active_project}
 				{@const project = dashboard.last_active_project}
-				<section
-					class="panel relative overflow-hidden p-5 sm:p-6"
-					aria-labelledby="continue-heading"
-				>
-					<div class="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-iris-500/12 blur-3xl"></div>
-					<div class="pointer-events-none absolute -bottom-24 -left-16 h-56 w-56 rounded-full bg-mint-400/8 blur-3xl"></div>
-					<div class="relative">
-						<div class="flex items-center justify-between gap-3">
-							<p class="section-title">Continue where you left off</p>
-							<StatusBadge status={project.status} />
-						</div>
-
-						<h2 id="continue-heading" class="mt-3 text-2xl font-semibold tracking-tight text-zinc-50 sm:text-3xl">
-							{project.name}
-						</h2>
-						<p class="mt-1.5 text-sm text-zinc-500">
-							Started {daysSince(project.started_at)} days ago · Last activity {relativeTime(project.last_activity_at)}
-						</p>
-
-						<div class="mt-4 flex flex-wrap gap-2">
-							<span class="chip bg-iris-500/10 font-mono text-iris-200 ring-iris-400/25">
-								<Icon name="branch" size={11} /> {focusBranch ?? 'main'}
-							</span>
-							<span class="chip bg-white/5 text-zinc-400 ring-white/10">
-								<Icon name="commit" size={11} /> {project.event_count} events
-							</span>
-							<span class="chip bg-white/5 text-zinc-400 ring-white/10">
-								<Icon name="folder" size={11} /> {project.repository_count} repos
-							</span>
-						</div>
-
-						{#if dashboard.latest_summary}
-							<div class="mt-5 rounded-xl border border-white/6 bg-ink-900/60 p-4">
-								<p class="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest text-zinc-600">
-									<Icon name="sparkles" size={12} class="text-iris-300" /> Latest memory
-								</p>
-								<p class="mt-2 line-clamp-3 text-[13px] leading-relaxed text-zinc-300">
-									{dashboard.latest_summary.summary}
-								</p>
-							</div>
-						{/if}
-
-						<div class="mt-5 flex flex-wrap gap-2.5">
-							<a href="/projects/{project.id}" class="btn-primary">
-								Open project <Icon name="chevron-right" size={15} />
-							</a>
-							<a href="/chat" class="btn-secondary">
-								<Icon name="message" size={15} /> Ask DevFlow
-							</a>
-						</div>
+				<section class="card p-6 sm:p-8" aria-labelledby="continue-heading">
+					<div class="flex items-center justify-between gap-3">
+						<p class="eyebrow text-accent">Continue where you left off</p>
+						<StatusBadge status={project.status} />
 					</div>
-				</section>
-			{/if}
 
-			<!-- Stats -->
-			<div class="grid gap-4 sm:grid-cols-3">
-				<StatCard label="Active projects" value={dashboard.active_projects} icon="zap" hint="Currently in motion" />
-				<StatCard label="Captured events" value={dashboard.total_events} icon="commit" hint="Commits, branches & pushes" tone="text-iris-300" />
-				<StatCard label="Projects in memory" value={dashboard.total_projects} icon="folder" hint="Across all repositories" tone="text-sky-300" />
-			</div>
+					<h2
+						id="continue-heading"
+						class="mt-3 text-3xl font-semibold tracking-tight text-text"
+					>
+						{project.name}
+					</h2>
+					<p class="mt-1.5 text-sm text-muted">
+						Started {daysSince(project.started_at)} days ago · Last active {relativeTime(
+							project.last_activity_at
+						)}
+					</p>
 
-			<div class="grid gap-4 lg:grid-cols-5">
-				<!-- Recent activity -->
-				<section class="panel p-5 sm:p-6 lg:col-span-3">
-					<div class="flex items-center justify-between">
-						<p class="section-title">Recent activity</p>
-						<a href="/projects" class="text-xs font-medium text-zinc-500 hover:text-zinc-300">View projects</a>
-					</div>
-					<div class="mt-2 divide-y divide-white/5">
-						{#each dashboard.recent_activity.slice(0, 8) as event}
-							<EventRow {event} showProject />
-						{:else}
-							<p class="py-6 text-center text-sm text-zinc-600">Waiting for the first Git event.</p>
-						{/each}
-					</div>
-				</section>
-
-				<!-- Latest AI summary -->
-				<section class="panel flex flex-col p-5 sm:p-6 lg:col-span-2">
-					<div class="flex items-center justify-between">
-						<p class="section-title">Latest memory</p>
-						<span class="grid h-8 w-8 place-items-center rounded-lg bg-iris-500/10 text-iris-300 ring-1 ring-inset ring-iris-400/20">
-							<Icon name="sparkles" size={16} />
+					<div class="mt-4 flex flex-wrap items-center gap-2 text-sm">
+						<span class="text-muted">Current focus</span>
+						<span
+							class="inline-flex items-center gap-1.5 rounded-control border border-border bg-raised px-2 py-1 font-mono text-xs text-text"
+						>
+							<Icon name="branch" size={12} class="text-accent" />
+							{focusBranch ?? 'main'}
 						</span>
 					</div>
 
 					{#if dashboard.latest_summary}
-						<p class="mt-4 flex-1 text-[13px] leading-relaxed text-zinc-300">{dashboard.latest_summary.summary}</p>
-						<div class="mt-4 border-t border-white/6 pt-3">
-							<p class="text-[11px] text-zinc-600">
-								{dashboard.last_active_project?.name ?? 'Project'} · {relativeTime(dashboard.latest_summary.created_at)}
+						<div class="mt-6 border-t border-border pt-4">
+							<p class="eyebrow">Latest memory</p>
+							<p class="mt-2 line-clamp-3 max-w-2xl text-sm leading-relaxed text-muted">
+								{dashboard.latest_summary.summary}
 							</p>
-							<a href="/chat" class="mt-2 inline-flex min-h-11 items-center gap-1 text-xs font-medium text-mint-300 hover:text-mint-200">
-								Ask about it <Icon name="chevron-right" size={12} />
-							</a>
-						</div>
-					{:else}
-						<div class="flex flex-1 flex-col items-center justify-center py-8 text-center">
-							<p class="text-sm text-zinc-400">No memories generated yet.</p>
-							<p class="mt-1 max-w-[24ch] text-xs text-zinc-600">Your timeline becomes a story once you ask DevFlow to summarise it.</p>
-							<a href="/projects" class="btn-secondary mt-4 text-xs"><Icon name="sparkles" size={14} /> Open a project</a>
 						</div>
 					{/if}
+
+					<div class="mt-6 flex flex-wrap gap-2">
+						<a href="/projects/{project.id}" class="btn-primary">
+							Open project <Icon name="arrow-right" size={15} />
+						</a>
+						<a href="/chat" class="btn-secondary">
+							<Icon name="message" size={15} /> Ask DevFlow
+						</a>
+					</div>
 				</section>
-			</div>
+			{/if}
+
+			<!-- Active projects from the recent timeline -->
+			{#if recentProjects.length > 0}
+				<section>
+					<div class="mb-3 flex items-center justify-between gap-3">
+						<h2 class="section-title">In motion</h2>
+						<a
+							href="/projects"
+							class="inline-flex min-h-11 items-center gap-1 text-xs font-medium text-muted transition hover:text-text"
+						>
+							All projects <Icon name="chevron-right" size={13} />
+						</a>
+					</div>
+					<div class="grid gap-3 sm:grid-cols-2">
+						{#each recentProjects as project (project.id)}
+							<a
+								href="/projects/{project.id}"
+								class="card group p-5 transition duration-150 hover:border-accent/40"
+								aria-label="Open {project.name}"
+							>
+								<div class="flex items-start justify-between gap-3">
+									<h3 class="min-w-0 truncate text-sm font-semibold text-text">
+										{project.name}
+									</h3>
+									{#if project.status}
+										<StatusBadge status={project.status} />
+									{:else}
+										<span class="pill border-border bg-raised text-muted">
+											<span class="h-1.5 w-1.5 rounded-full bg-muted"></span>
+											Recent
+										</span>
+									{/if}
+								</div>
+								<p class="mt-1 text-xs text-muted">
+									Last active {relativeTime(project.last)}
+								</p>
+								<div class="mt-4 flex items-end justify-between gap-3">
+									<span
+										class="inline-flex min-w-0 items-center gap-1.5 font-mono text-[11px] text-muted"
+									>
+										<Icon name="branch" size={11} />
+										<span class="truncate">{project.branch ?? 'main'}</span>
+									</span>
+									<Sparkline values={project.series} label="{project.name} activity" />
+								</div>
+							</a>
+						{/each}
+					</div>
+				</section>
+			{/if}
+
+			<!-- Recent activity -->
+			<section>
+				<div class="mb-3 flex items-center justify-between gap-3">
+					<h2 class="section-title">Recent activity</h2>
+					<a
+						href="/chat"
+						class="inline-flex min-h-11 items-center gap-1 text-xs font-medium text-muted transition hover:text-text"
+					>
+						Ask about it <Icon name="chevron-right" size={13} />
+					</a>
+				</div>
+				<div class="card px-5 py-1 sm:px-6">
+					<div class="divide-y divide-border">
+						{#each dashboard.recent_activity.slice(0, 8) as event (event.id)}
+							<EventRow {event} showProject />
+						{:else}
+							<p class="py-8 text-center text-sm text-muted">
+								Waiting for the first Git event.
+							</p>
+						{/each}
+					</div>
+				</div>
+			</section>
 
 			{#if refreshing}
-				<p class="text-center text-[11px] text-zinc-600" aria-live="polite">Refreshing in the background…</p>
+				<p class="text-center text-xs text-muted" aria-live="polite">Refreshing in the background…</p>
 			{/if}
 		{/if}
 	{/if}

@@ -23,5 +23,5 @@
 {#if html}
 	<div class="chat-markdown">{@html html}</div>
 {:else}
-	<p class="whitespace-pre-wrap text-[14px] leading-relaxed text-zinc-200">{source}</p>
+	<p class="whitespace-pre-wrap text-sm leading-relaxed text-text">{source}</p>
 {/if}

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { eventMeta, shortHash } from '#lib/events';
 	import { eventBranch, eventTitle, formatDateTime, relativeTime } from '#lib/format';
 	import type { GitEvent } from '#lib/types';
 	import Icon from './Icon.svelte';
@@ -9,13 +10,6 @@
 		emptyText = 'No events yet. Install the agent to start the timeline.'
 	}: { events: GitEvent[]; showProject?: boolean; emptyText?: string } = $props();
 
-	const eventMeta: Record<string, { icon: string; tone: string }> = {
-		commit: { icon: 'commit', tone: 'text-mint-300 bg-mint-400/10 ring-mint-400/25' },
-		branch_change: { icon: 'branch', tone: 'text-iris-300 bg-iris-400/10 ring-iris-400/25' },
-		push: { icon: 'push', tone: 'text-sky-300 bg-sky-400/10 ring-sky-400/25' },
-		repository_created: { icon: 'plus', tone: 'text-amber-300 bg-amber-400/10 ring-amber-400/25' }
-	};
-
 	function dayLabel(date: Date): string {
 		const today = new Date();
 		const midnight = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
@@ -23,7 +17,9 @@
 		const days = Math.round((midnight - target) / 86400000);
 		if (days === 0) return 'Today';
 		if (days === 1) return 'Yesterday';
-		return date.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'short' });
+		const weekday = date.toLocaleDateString(undefined, { weekday: 'short' });
+		const month = date.toLocaleDateString(undefined, { month: 'short' });
+		return `${weekday} ${date.getDate()} ${month}`;
 	}
 
 	const groups = $derived.by(() => {
@@ -40,57 +36,70 @@
 </script>
 
 {#if events.length === 0}
-	<p class="py-8 text-center text-sm text-zinc-600">{emptyText}</p>
+	<div class="rounded-control border border-dashed border-border px-4 py-10 text-center">
+		<p class="text-sm text-muted">{emptyText}</p>
+	</div>
 {:else}
-	<div class="space-y-6">
+	<div class="space-y-7">
 		{#each groups as group}
 			<section>
-				<div class="mb-2 flex items-center gap-3">
-					<h3 class="section-title">{group.label}</h3>
-					<span class="h-px flex-1 bg-white/8"></span>
-					<span class="text-[10px] font-medium text-zinc-600">{group.events.length}</span>
+				<div class="mb-3 flex items-center gap-3">
+					<h3 class="eyebrow">{group.label}</h3>
+					<span class="h-px flex-1 bg-border"></span>
+					<span class="text-xs text-muted">{group.events.length}</span>
 				</div>
 				<ol>
 					{#each group.events as event, index (event.id)}
-						{@const meta = eventMeta[event.event_type] ?? {
-							icon: 'code',
-							tone: 'text-zinc-300 bg-white/5 ring-white/10'
-						}}
+						{@const meta = eventMeta(event.event_type)}
 						{@const branch = eventBranch(event.payload)}
-						<li class="relative flex gap-3.5 pb-4 last:pb-0">
+						{@const hash = shortHash(event.payload)}
+						<li class="relative flex gap-3 pb-5 last:pb-0">
 							{#if index < group.events.length - 1}
-								<span class="absolute bottom-0 left-[15px] top-9 w-px bg-white/8" aria-hidden="true"></span>
+								<span
+									class="absolute bottom-0 left-[13px] top-8 w-px bg-border"
+									aria-hidden="true"
+								></span>
 							{/if}
 							<span
-								class="relative z-10 grid h-8 w-8 shrink-0 place-items-center rounded-lg ring-1 ring-inset {meta.tone}"
+								class="relative z-10 grid h-7 w-7 shrink-0 place-items-center rounded-[6px] border {meta.tone}"
 							>
-								<Icon name={meta.icon} size={15} />
+								<Icon name={meta.icon} size={13} />
 							</span>
 							<div class="min-w-0 flex-1 pt-0.5">
 								<div class="flex items-start justify-between gap-3">
-									<p class="text-sm font-medium leading-snug text-zinc-200">
-										{eventTitle(event.event_type, event.payload)}
-									</p>
+									<div class="flex min-w-0 items-start gap-2">
+										<span
+											class="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full {meta.dot}"
+											aria-hidden="true"
+										></span>
+										<p class="min-w-0 text-sm font-medium leading-snug text-text">
+											{eventTitle(event.event_type, event.payload)}
+										</p>
+									</div>
 									<time
-										class="shrink-0 text-[11px] text-zinc-500"
+										class="shrink-0 text-xs text-muted"
 										datetime={event.created_at}
 										title={formatDateTime(event.created_at)}
 									>
 										{relativeTime(event.created_at)}
 									</time>
 								</div>
-								<div class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-zinc-500">
+								<div class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 pl-3.5 text-xs text-muted">
 									{#if showProject && event.project_name}
-										<span class="font-medium text-zinc-400">{event.project_name}</span>
+										<span class="text-muted">{event.project_name}</span>
 										<span aria-hidden="true">·</span>
 									{/if}
 									{#if branch}
-										<span class="inline-flex items-center gap-1 font-mono text-[10px] text-zinc-400">
+										<span class="inline-flex items-center gap-1 font-mono text-[11px]">
 											<Icon name="branch" size={10} />{branch}
 										</span>
 										<span aria-hidden="true">·</span>
 									{/if}
-									<span class="truncate font-mono text-[10px] text-zinc-600">
+									{#if hash}
+										<span class="font-mono text-[11px]">{hash}</span>
+										<span aria-hidden="true">·</span>
+									{/if}
+									<span class="truncate font-mono text-[11px] text-muted/80">
 										{event.repository_name ?? 'repository'}
 									</span>
 								</div>
