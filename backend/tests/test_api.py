@@ -1,3 +1,4 @@
+from app.services.rate_limit import event_rate_limiter
 from tests.conftest import auth_headers, register
 
 
@@ -179,6 +180,37 @@ async def test_projects_are_isolated_between_users(client):
         f"/api/v1/projects/{project_id}", headers=auth_headers(second["tokens"])
     )
     assert peek.status_code == 404
+
+
+async def test_event_ingestion_is_rate_limited_per_api_key(client):
+    data = await register(client)
+    headers = auth_headers(data["tokens"])
+    device = await client.post("/api/v1/devices", json={"name": "Laptop"}, headers=headers)
+    api_key = device.json()["api_key"]
+
+    event = {
+        "event_type": "commit",
+        "repository": {"name": "burst", "local_identifier": "/burst"},
+        "payload": {"message": "first"},
+    }
+
+    original_limit = event_rate_limiter.limit
+    event_rate_limiter.limit = 1
+    event_rate_limiter.reset()
+    try:
+        first = await client.post("/api/v1/events", json=event, headers={"X-API-Key": api_key})
+        assert first.status_code == 201
+
+        second = await client.post(
+            "/api/v1/events",
+            json={**event, "payload": {"message": "second"}},
+            headers={"X-API-Key": api_key},
+        )
+        assert second.status_code == 429
+        assert second.headers["Retry-After"]
+    finally:
+        event_rate_limiter.limit = original_limit
+        event_rate_limiter.reset()
 
 
 async def test_device_revocation(client):

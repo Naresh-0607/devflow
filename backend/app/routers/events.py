@@ -8,6 +8,7 @@ from app.models import GitEvent, Project, Repository, User
 from app.schemas import EventAccepted, EventCreate, EventOut
 from app.serializers import event_out
 from app.services.events import ingest_event
+from app.services.rate_limit import event_rate_limiter
 
 router = APIRouter(prefix="/events", tags=["events"])
 
@@ -16,6 +17,10 @@ router = APIRouter(prefix="/events", tags=["events"])
 async def create_event(
     payload: EventCreate, device: CurrentDevice, db: DbSession
 ) -> EventAccepted:
+    # One API key == one device; rate limit by device so a noisy repo cannot
+    # exhaust another machine's budget.
+    event_rate_limiter.check(str(device.id))
+
     user = await db.get(User, device.user_id)
     result = await ingest_event(db, user, payload)
     return EventAccepted(

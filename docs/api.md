@@ -30,13 +30,17 @@ Base URL: `http://localhost:8000/api/v1` (dev) · interactive docs at `/docs`.
 
 Event types: `repository_created`, `branch_change`, `commit`, `push`.
 
+Ingestion is rate limited per API key (default 120 events/minute). Over-limit
+requests return `429` with a `Retry-After` header. Configure with
+`EVENT_RATE_LIMIT_PER_MINUTE` (set `0` to disable).
+
 ## Projects (Bearer)
 
 | Method | Path                | Description                              |
 | ------ | ------------------- | ---------------------------------------- |
 | GET    | `/projects`         | All projects with activity stats         |
 | POST   | `/projects`         | Create manually                          |
-| GET    | `/projects/{id}`    | Detail: repos, timeline, latest memory   |
+| GET    | `/projects/{id}`    | Detail: repos, timeline, memories, count |
 | PATCH  | `/projects/{id}`    | Rename, describe, change status          |
 | DELETE | `/projects/{id}`    | Delete project + history                 |
 

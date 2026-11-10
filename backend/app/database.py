@@ -1,9 +1,12 @@
+import logging
 from collections.abc import AsyncGenerator
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
 
 from app.config import settings
+
+logger = logging.getLogger(__name__)
 
 engine = create_async_engine(
     settings.database_url_async,
@@ -25,8 +28,17 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
 
 
 async def init_db() -> None:
-    """Create tables for the MVP. Swap for Alembic migrations before public launch."""
+    """Prepare the schema for local development.
+
+    Production uses Alembic exclusively (``alembic upgrade head`` runs before the
+    API starts), so we never create tables implicitly there. SQLite development
+    keeps the zero-setup ``create_all`` behaviour.
+    """
     from app import models  # noqa: F401  (register metadata)
+
+    if settings.environment == "production":
+        logger.info("Production startup: schema is managed by Alembic migrations")
+        return
 
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)

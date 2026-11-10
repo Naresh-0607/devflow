@@ -1,7 +1,7 @@
 import uuid
 
 from fastapi import APIRouter, HTTPException, Response, status
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import selectinload
 
 from app.deps import CurrentUser, DbSession, ensure_utc
@@ -83,6 +83,11 @@ async def get_project(project_id: uuid.UUID, user: CurrentUser, db: DbSession) -
             .limit(1)
         )
     ).scalar_one_or_none()
+    summary_count = (
+        await db.execute(
+            select(func.count(AISummary.id)).where(AISummary.project_id == project.id)
+        )
+    ).scalar_one()
 
     base = project_out(project, last_activity, event_count, len(repositories))
     return ProjectDetail(
@@ -90,6 +95,7 @@ async def get_project(project_id: uuid.UUID, user: CurrentUser, db: DbSession) -
         repositories=[RepositoryOut.model_validate(repo) for repo in repositories],
         recent_events=[event_out(event) for event in events],
         latest_summary=summary_out(latest_summary) if latest_summary else None,
+        summary_count=summary_count,
     )
 
 

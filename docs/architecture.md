@@ -95,7 +95,9 @@ product still works offline.
 
 ## Production notes
 
-- Replace `create_all` with Alembic migrations before public launch.
+- Production schema changes are managed by Alembic. Render runs
+  `alembic upgrade head` before starting the API; `create_all` only runs in
+  non-production environments.
 - Configure `CORS_ORIGINS` to the deployed frontend origin.
 - Set a strong `SECRET_KEY` (32+ random bytes).
 - Deploy the frontend with `@sveltejs/adapter-cloudflare` and set `VITE_API_URL`.

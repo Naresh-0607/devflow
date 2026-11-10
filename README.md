@@ -30,8 +30,10 @@ uvicorn app.main:app --reload
 
 API docs: http://localhost:8000/docs
 
-The backend defaults to a local SQLite database. Set `DATABASE_URL` to a Neon
-Postgres URL for production.
+The backend defaults to a local SQLite database (tables are created
+automatically in development). Set `DATABASE_URL` to a Neon Postgres URL for
+production; production schema changes are applied with `alembic upgrade head`
+(Render runs it automatically before starting the API).
 
 ### 2. Frontend
 
@@ -87,14 +89,12 @@ SvelteKit PWA (phone) → "Here's what you were building."
 - [x] Mobile-first responsive PWA with offline shell and install manifest
 - [x] LiteLLM/Groq summaries with a deterministic offline fallback
 - [x] Local agent with non-blocking `post-commit`, `post-checkout`, `pre-push` hooks
-- [x] Backend test suite (`8 passed`) and verified end-to-end Git hook flow
+- [x] Global Git hooks template + auto-tracking of newly initialised repositories (`git init`)
+- [x] Alembic migrations for production schema changes
+- [x] Per-API-key rate limiting on event ingestion
+- [x] Backend test suite (`9 passed`) and verified end-to-end Git hook flow
 
 ## Next steps
 
-- Alembic migrations instead of `create_all` for production schema changes
-- Background summary generation (daily/weekly) via a Render cron job
-- Global Git hooks path + auto-tracking newly initialised repositories
-- Project ↔ repository management UI (link multiple repos to one project)
-- PNG app icons and push notifications for a fully installable PWA
-- Rate limiting and audit logs for the event ingestion API
+See [ROADMAP.md](ROADMAP.md) for the remaining v1.x work:
 

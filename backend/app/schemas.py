@@ -154,6 +154,7 @@ class ProjectDetail(ProjectOut):
     repositories: list[RepositoryOut] = Field(default_factory=list)
     recent_events: list[EventOut] = Field(default_factory=list)
     latest_summary: SummaryOut | None = None
+    summary_count: int = 0
 
 
 # ---------- Dashboard / insights ----------

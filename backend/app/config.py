@@ -68,6 +68,9 @@ class Settings(BaseSettings):
     groq_api_key: str = ""
     llm_model: str = "groq/llama-3.3-70b-versatile"
 
+    # Per-API-key ingestion limit. Set to 0 to disable.
+    event_rate_limit_per_minute: int = 120
+
     @property
     def database_url_async(self) -> str:
         return _normalize_database_url(self.database_url)[0]

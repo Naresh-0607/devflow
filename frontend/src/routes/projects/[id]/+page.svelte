@@ -151,7 +151,7 @@
 			<div class="relative mt-5 grid grid-cols-3 gap-3 border-t border-white/6 pt-4">
 				<div><p class="section-title">Events</p><p class="mt-1 text-xl font-semibold text-zinc-100">{project.event_count}</p></div>
 				<div><p class="section-title">Repositories</p><p class="mt-1 text-xl font-semibold text-zinc-100">{project.repositories.length}</p></div>
-				<div><p class="section-title">Memories</p><p class="mt-1 text-xl font-semibold text-zinc-100">{project.latest_summary ? '1+' : '0'}</p></div>
+				<div><p class="section-title">Memories</p><p class="mt-1 text-xl font-semibold text-zinc-100">{project.summary_count}</p></div>
 			</div>
 		</header>
 

@@ -76,6 +76,7 @@ export interface ProjectDetail extends Project {
 	repositories: Repository[];
 	recent_events: GitEvent[];
 	latest_summary: Summary | null;
+	summary_count: number;
 }
 
 export interface Dashboard {
