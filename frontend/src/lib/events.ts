@@ -28,8 +28,8 @@ const EVENT_META: Record<string, EventMeta> = {
 	},
 	repository_created: {
 		icon: 'folder-plus',
-		tone: 'border-violet/30 bg-violet/10 text-violet',
-		dot: 'bg-violet',
+		tone: 'border-border bg-raised text-text',
+		dot: 'bg-muted',
 		label: 'Repository'
 	}
 };

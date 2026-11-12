@@ -43,7 +43,7 @@ self.addEventListener('fetch', (event) => {
 	const url = new URL(request.url);
 	if (url.origin !== self.location.origin) return;
 
-	// Developer memory is private and always fresh: never cache API traffic.
+	// User data is private and always fresh: never cache API traffic.
 	if (url.pathname.startsWith('/api/')) return;
 
 	// Navigations: network first, then the cached app shell for offline starts.

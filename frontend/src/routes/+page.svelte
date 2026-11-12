@@ -124,7 +124,7 @@
 <svelte:head><title>Dashboard — DevFlow</title></svelte:head>
 
 <div class="flex flex-col gap-8">
-	<PageHeader title={greeting} subtitle="Here's what you were building, and where you left off.">
+	<PageHeader title={greeting} subtitle="An overview of your recent work.">
 		<a href="/projects" class="btn-secondary">
 			<Icon name="folder" size={15} /> All projects
 		</a>
@@ -156,7 +156,7 @@
 		<div class="card flex flex-col items-center gap-4 p-10 text-center">
 			<Icon name="alert" size={24} class="text-warning" />
 			<div>
-				<p class="text-sm font-medium text-text">Could not reach your memory</p>
+				<p class="text-sm font-medium text-text">Could not load the dashboard</p>
 				<p class="mt-1 text-sm text-muted">{error}</p>
 			</div>
 			<button class="btn-secondary" onclick={reload}><Icon name="refresh" size={15} /> Retry</button>
@@ -164,9 +164,9 @@
 	{:else if dashboard}
 		{#if dashboard.total_projects === 0}
 			<EmptyState
-				icon="sparkles"
-				title="Your memory starts with one commit."
-				description="Install the DevFlow agent, connect your machine, and every commit, branch and push becomes part of a timeline you can actually remember."
+				icon="activity"
+				title="No activity yet"
+				description="Install the DevFlow agent on a machine and every commit, branch and push is recorded to a timeline you can browse here."
 			>
 				<a href="/settings" class="btn-primary"><Icon name="key" size={15} /> Connect your laptop</a>
 				<a href="/projects" class="btn-secondary"><Icon name="plus" size={15} /> Create a project</a>
@@ -177,7 +177,7 @@
 				{@const project = dashboard.last_active_project}
 				<section class="card p-6 sm:p-8" aria-labelledby="continue-heading">
 					<div class="flex items-center justify-between gap-3">
-						<p class="eyebrow text-accent">Continue where you left off</p>
+						<p class="eyebrow">Continue where you left off</p>
 						<StatusBadge status={project.status} />
 					</div>
 
@@ -198,14 +198,14 @@
 						<span
 							class="inline-flex items-center gap-1.5 rounded-control border border-border bg-raised px-2 py-1 font-mono text-xs text-text"
 						>
-							<Icon name="branch" size={12} class="text-accent" />
+							<Icon name="branch" size={12} class="text-muted" />
 							{focusBranch ?? 'main'}
 						</span>
 					</div>
 
 					{#if dashboard.latest_summary}
 						<div class="mt-6 border-t border-border pt-4">
-							<p class="eyebrow">Latest memory</p>
+							<p class="eyebrow">Latest summary</p>
 							<p class="mt-2 line-clamp-3 max-w-2xl text-sm leading-relaxed text-muted">
 								{dashboard.latest_summary.summary}
 							</p>
@@ -239,7 +239,7 @@
 						{#each recentProjects as project (project.id)}
 							<a
 								href="/projects/{project.id}"
-								class="card group p-5 transition duration-150 hover:border-accent/40"
+								class="card group p-5 transition duration-150 hover:border-muted/60"
 								aria-label="Open {project.name}"
 							>
 								<div class="flex items-start justify-between gap-3">

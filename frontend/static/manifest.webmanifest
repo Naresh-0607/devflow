@@ -1,13 +1,13 @@
 {
-	"name": "DevFlow — Developer Memory",
+	"name": "DevFlow",
 	"short_name": "DevFlow",
-	"description": "Your AI-powered developer memory. It remembers what you were building.",
+	"description": "A searchable timeline of your Git activity, with summaries and answers built on top.",
 	"start_url": "/",
 	"scope": "/",
 	"display": "standalone",
 	"orientation": "portrait-primary",
-	"background_color": "#07080c",
-	"theme_color": "#07080c",
+	"background_color": "#0e0f11",
+	"theme_color": "#0e0f11",
 	"icons": [
 		{
 			"src": "/icon.svg",

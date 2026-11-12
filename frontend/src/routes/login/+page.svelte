@@ -25,7 +25,7 @@
 
 <svelte:head><title>Sign in — DevFlow</title></svelte:head>
 
-<AuthShell title="Welcome back" subtitle="Sign in to pick up where your memory left off.">
+<AuthShell title="Sign in" subtitle="Sign in to continue.">
 	<form class="space-y-4" onsubmit={(event) => { event.preventDefault(); submit(); }}>
 		<div>
 			<label class="label" for="email">Email</label>

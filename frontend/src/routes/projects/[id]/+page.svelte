@@ -246,20 +246,20 @@
 			</div>
 		</div>
 
-		<!-- AI memory -->
+		<!-- Summary -->
 		<section class="card p-6">
 			<div class="flex flex-wrap items-start justify-between gap-3">
 				<div>
-					<p class="eyebrow">Project memory</p>
+					<p class="eyebrow">Summary</p>
 					<h2 class="mt-1 text-base font-semibold text-text">Latest summary</h2>
 				</div>
 				<button class="btn-secondary" onclick={summarise} disabled={generating}>
 					{#if generating}
 						<span
-							class="h-3.5 w-3.5 animate-spin rounded-full border-2 border-border border-t-accent"
+							class="h-3.5 w-3.5 animate-spin rounded-full border-2 border-border border-t-text"
 						></span>
 					{:else}
-						<Icon name="sparkles" size={14} />
+						<Icon name="edit" size={14} />
 					{/if}
 					{generating ? 'Generating…' : 'Generate summary'}
 				</button>
@@ -277,7 +277,7 @@
 				<div class="mt-4 rounded-control border border-dashed border-border px-4 py-8 text-center">
 					<p class="text-sm text-muted">No summary yet.</p>
 					<p class="mt-1 text-xs text-muted">
-						Generate one to turn this project's commits and branches into a short memory.
+						Generate one to summarize this project's recent commits and branches.
 					</p>
 				</div>
 			{/if}
@@ -352,7 +352,7 @@
 								href={repo.remote_url}
 								target="_blank"
 								rel="noreferrer"
-								class="inline-flex min-h-11 items-center gap-1 text-xs text-muted transition hover:text-accent"
+								class="inline-flex min-h-11 items-center gap-1 text-xs text-muted transition hover:text-text"
 							>
 								Remote <Icon name="external" size={12} />
 							</a>

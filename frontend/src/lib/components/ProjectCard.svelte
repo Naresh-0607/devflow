@@ -9,13 +9,13 @@
 
 <a
 	href="/projects/{project.id}"
-	class="card group block p-5 transition duration-150 hover:border-accent/40"
+	class="card group block p-5 transition duration-150 hover:border-muted/60"
 	aria-label="Open {project.name}"
 >
 	<div class="flex items-start justify-between gap-3">
 		<div class="flex min-w-0 items-center gap-3">
 			<span
-				class="grid h-9 w-9 shrink-0 place-items-center rounded-control border border-border bg-raised text-muted transition group-hover:text-accent"
+				class="grid h-9 w-9 shrink-0 place-items-center rounded-control border border-border bg-raised text-muted transition group-hover:text-text"
 			>
 				<Icon name="folder" size={16} />
 			</span>

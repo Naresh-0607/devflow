@@ -173,8 +173,8 @@
 		{#if createError}<p class="mt-2 text-xs text-danger">{createError}</p>{/if}
 
 		{#if createdKey}
-			<div class="mt-4 rounded-control border border-accent/30 bg-accent-soft p-4">
-				<p class="text-xs font-semibold text-accent">Your new API key — shown only once</p>
+			<div class="mt-4 rounded-control border border-border bg-raised p-4">
+				<p class="text-xs font-semibold text-text">Your new API key — shown only once</p>
 				<div class="mt-2 flex items-center gap-2">
 					<code
 						class="min-w-0 flex-1 overflow-x-auto whitespace-nowrap rounded-control border border-border bg-bg px-3 py-2 font-mono text-xs text-text"

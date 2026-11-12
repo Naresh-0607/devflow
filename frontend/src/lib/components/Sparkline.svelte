@@ -14,7 +14,7 @@
 >
 	{#each values as value, index}
 		<span
-			class="w-1 rounded-full bg-accent"
+			class="w-1 rounded-full bg-muted"
 			style="height: {Math.max(2, Math.round((value / peak) * 28))}px; opacity: {value ? 0.85 : 0.2}"
 		></span>
 	{/each}

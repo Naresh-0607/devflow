@@ -34,7 +34,7 @@
 
 <svelte:head><title>Create account — DevFlow</title></svelte:head>
 
-<AuthShell title="Start remembering" subtitle="Create your account. Your future self will thank you.">
+<AuthShell title="Create account" subtitle="Start tracking your Git activity.">
 	<form class="space-y-4" onsubmit={(event) => { event.preventDefault(); submit(); }}>
 		<div>
 			<label class="label" for="email">Email</label>

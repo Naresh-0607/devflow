@@ -26,6 +26,7 @@
 		GitFork,
 		HardDrive,
 		House,
+		Info,
 		KeyRound,
 		Laptop,
 		Link,
@@ -39,8 +40,6 @@
 		Search,
 		Send,
 		Settings,
-		Sparkle,
-		Sparkles,
 		SquarePen,
 		Sun,
 		Terminal,
@@ -50,7 +49,6 @@
 		X,
 		Zap
 	} from 'lucide-svelte';
-
 	let {
 		name,
 		size = 18,
@@ -62,8 +60,7 @@
 	const icons: Record<string, any> = {
 		home: House,
 		folder: Folder,
-		sparkles: Sparkles,
-		sparkle: Sparkle,
+		info: Info,
 		settings: Settings,
 		plus: Plus,
 		branch: GitBranch,

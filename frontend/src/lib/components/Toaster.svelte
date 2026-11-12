@@ -10,7 +10,7 @@
 	const toneIcon: Record<string, string> = {
 		success: 'check-circle',
 		error: 'alert-circle',
-		info: 'sparkles'
+		info: 'info'
 	};
 </script>
 

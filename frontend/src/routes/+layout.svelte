@@ -73,7 +73,7 @@
 </script>
 
 <svelte:head>
-	<title>DevFlow — Developer Memory</title>
+	<title>DevFlow</title>
 </svelte:head>
 
 {#if authPage}
@@ -81,8 +81,8 @@
 {:else if !auth.ready}
 	<div class="grid min-h-dvh place-items-center bg-bg">
 		<div class="flex items-center gap-3 text-sm text-muted">
-			<span class="h-4 w-4 animate-spin rounded-full border-2 border-border border-t-accent"></span>
-			Opening your memory…
+			<span class="h-4 w-4 animate-spin rounded-full border-2 border-border border-t-text"></span>
+			Loading…
 		</div>
 	</div>
 {:else}
@@ -102,14 +102,10 @@
 						class="flex min-h-11 items-center gap-3 rounded-control px-3 text-sm font-medium transition duration-150 {isActive(
 							item.href
 						)
-							? 'bg-accent-soft text-text'
-							: 'text-muted hover:bg-raised hover:text-text'}"
+							? 'bg-raised text-text'
+							: 'text-muted hover:bg-raised/60 hover:text-text'}"
 					>
-						<Icon
-							name={item.icon}
-							size={17}
-							class={isActive(item.href) ? 'text-accent' : ''}
-						/>
+						<Icon name={item.icon} size={17} />
 						{item.label}
 					</a>
 				{/each}
@@ -187,12 +183,12 @@
 						class="relative flex min-h-14 flex-col items-center justify-center gap-1 py-2 text-[11px] font-medium transition {isActive(
 							item.href
 						)
-							? 'text-accent'
+							? 'text-text'
 							: 'text-muted'}"
 					>
 						{#if isActive(item.href)}
 							<span
-								class="absolute inset-x-0 top-0 mx-auto h-0.5 w-8 rounded-full bg-accent"
+								class="absolute inset-x-0 top-0 mx-auto h-0.5 w-8 rounded-full bg-text"
 								aria-hidden="true"
 							></span>
 						{/if}

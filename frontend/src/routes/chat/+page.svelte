@@ -211,10 +211,10 @@
 	>
 		{#if messages.length === 0}
 			<div class="flex min-h-full flex-col items-center justify-center px-2 py-8 text-center">
-				<span class="grid h-11 w-11 place-items-center rounded-control border border-accent/25 bg-accent-soft text-accent">
-					<Icon name="sparkles" size={20} />
+				<span class="grid h-11 w-11 place-items-center rounded-control border border-border bg-raised text-muted">
+					<Icon name="message" size={20} />
 				</span>
-				<h2 class="mt-4 text-xl font-semibold text-text">What do you want to remember?</h2>
+				<h2 class="mt-4 text-xl font-semibold text-text">Ask about your work</h2>
 				<p class="mt-1.5 max-w-sm text-sm leading-relaxed text-muted">
 					Ask about projects, commits, branches or what you worked on. DevFlow reads your own
 					activity — nothing else.
@@ -223,7 +223,7 @@
 					{#each suggestions as suggestion}
 						<button
 							type="button"
-							class="min-h-11 rounded-control border border-border bg-bg px-3 py-2.5 text-left text-sm text-muted transition duration-150 hover:border-accent/40 hover:text-text"
+							class="min-h-11 rounded-control border border-border bg-bg px-3 py-2.5 text-left text-sm text-muted transition duration-150 hover:border-muted/60 hover:text-text"
 							onclick={() => submit(suggestion)}
 						>
 							{suggestion}
@@ -236,16 +236,16 @@
 				<div class="flex gap-2.5 {message.role === 'user' ? 'justify-end' : 'justify-start'}">
 					{#if message.role === 'assistant'}
 						<span
-							class="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-[6px] border border-accent/25 bg-accent-soft text-accent"
+							class="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-[6px] border border-border bg-raised text-muted"
 						>
-							<Icon name="sparkles" size={13} />
+							<Icon name="message" size={13} />
 						</span>
 					{/if}
 
 					<div
 						class="min-w-0 max-w-[85%] rounded-card px-3.5 py-2.5 sm:max-w-[78%] {message.role ===
 						'user'
-							? 'rounded-br-[4px] bg-accent text-white'
+							? 'rounded-br-[4px] bg-text text-bg'
 							: 'rounded-bl-[4px] border border-border bg-raised text-text'}"
 					>
 						{#if message.role === 'user'}
@@ -253,21 +253,21 @@
 						{:else if message.streaming && !message.content}
 							<div class="flex items-center gap-2 text-sm text-muted">
 								<span class="flex items-center gap-1" aria-hidden="true">
-									<span class="typing-dot h-1.5 w-1.5 rounded-full bg-accent"></span>
-									<span class="typing-dot h-1.5 w-1.5 rounded-full bg-accent"></span>
-									<span class="typing-dot h-1.5 w-1.5 rounded-full bg-accent"></span>
+									<span class="typing-dot h-1.5 w-1.5 rounded-full bg-muted"></span>
+									<span class="typing-dot h-1.5 w-1.5 rounded-full bg-muted"></span>
+									<span class="typing-dot h-1.5 w-1.5 rounded-full bg-muted"></span>
 								</span>
 								<span>{message.tool ? toolLabels[message.tool] ?? 'Looking that up' : 'Thinking'}…</span>
 							</div>
 						{:else if message.streaming}
 							<p class="whitespace-pre-wrap text-sm leading-relaxed text-text">
 								{message.content}<span
-									class="ml-0.5 inline-block h-4 w-1 animate-pulse bg-accent align-middle"
+									class="ml-0.5 inline-block h-4 w-1 animate-pulse bg-text align-middle"
 								></span>
 							</p>
 							{#if message.tool}
 								<p class="mt-2 flex items-center gap-1.5 text-xs text-muted">
-									<span class="h-1.5 w-1.5 animate-pulse rounded-full bg-accent"></span>
+									<span class="h-1.5 w-1.5 animate-pulse rounded-full bg-muted"></span>
 									{toolLabels[message.tool] ?? 'Looking that up'}…
 								</p>
 							{/if}

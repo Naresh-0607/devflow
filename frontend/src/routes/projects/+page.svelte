@@ -97,7 +97,7 @@
 <div class="flex flex-col gap-8">
 	<PageHeader
 		title="Projects"
-		subtitle="Every repository DevFlow remembers, in one place."
+		subtitle="All tracked projects."
 	>
 		<button class="btn-primary" onclick={() => (showCreate = true)}>
 			<Icon name="plus" size={16} /> New project
@@ -203,7 +203,7 @@
 			<div class="flex items-start justify-between gap-3">
 				<div>
 					<h2 id="new-project-title" class="text-xl font-semibold text-text">New project</h2>
-					<p class="mt-1 text-sm text-muted">Create a memory space. Repositories can be linked later.</p>
+					<p class="mt-1 text-sm text-muted">Repositories can be linked later.</p>
 				</div>
 				<button
 					class="btn-icon -mr-2 -mt-1"

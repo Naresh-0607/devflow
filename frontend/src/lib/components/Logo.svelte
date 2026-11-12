@@ -4,7 +4,7 @@
 
 <a href="/" class="inline-flex items-center gap-2.5" aria-label="DevFlow home">
 	<span
-		class="grid shrink-0 place-items-center rounded-[10px] border border-accent/25 bg-accent/10 text-accent"
+		class="grid shrink-0 place-items-center rounded-[10px] border border-border bg-raised text-text"
 		style="width: {size}px; height: {size}px"
 	>
 		<svg viewBox="0 0 24 24" width={size * 0.58} height={size * 0.58} fill="none" aria-hidden="true">

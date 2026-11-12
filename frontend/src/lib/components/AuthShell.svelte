@@ -12,7 +12,7 @@
 	const points = [
 		{ icon: 'commit', text: 'Captures commits automatically' },
 		{ icon: 'branch', text: 'Tracks your focus across branches' },
-		{ icon: 'sparkles', text: 'Turns activity into AI summaries' }
+		{ icon: 'activity', text: 'Generates a readable summary of your work' }
 	];
 </script>
 
@@ -24,13 +24,13 @@
 		<div><Logo size={32} /></div>
 
 		<div class="max-w-md">
-			<p class="eyebrow text-accent">Developer memory</p>
+			<p class="eyebrow">Developer timeline</p>
 			<h2 class="mt-4 text-3xl font-semibold leading-tight tracking-tight text-text">
-				You code.<br />DevFlow remembers.
+				Your Git activity,<br />on the record.
 			</h2>
 			<p class="mt-4 text-sm leading-relaxed text-muted">
-				Your commits, branches and pushes become a timeline you can read from anywhere — a
-				quiet notebook for the work you would otherwise forget.
+				Your commits, branches and pushes become a timeline you can read from anywhere, with
+				summaries and answers built on top of it.
 			</p>
 
 			<div class="mt-10 space-y-3">
@@ -46,7 +46,7 @@
 		</div>
 
 		<p class="text-xs text-muted">
-			No keyboard tracking. No screen time. Just Git events, remembered.
+			No keyboard tracking. No screen time. Only Git events.
 		</p>
 	</div>
 
